@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Download, 
-  Layers, 
   Type, 
   Palette, 
   Tag, 
@@ -11,22 +10,24 @@ import {
   RotateCcw, 
   Check, 
   Copy, 
-  Share2,
-  Sparkles,
-  Sliders
+  Save,
+  ArrowLeft,
+  Sparkles
 } from 'lucide-react';
-import { Project } from '../../types';
+import { useAuth } from '../../lib/AuthContext';
+import { BrandLogo } from '../common/BrandLogo';
 
 interface StudioViewProps {
   onBackToDashboard?: () => void;
 }
 
-export const StudioView: React.FC<StudioViewProps> = () => {
-  // Studio Canvas State
-  const [projectName, setProjectName] = useState('AWS Multi-AZ Cloud Architecture');
-  const [headline, setHeadline] = useState('DevSecOps Cloud Architecture');
-  const [subtitle, setSubtitle] = useState('High-availability microservices with automated rolling rollback');
-  const [badgeText, setBadgeText] = useState('AWS PRODUCTION');
+export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => {
+  const { user, token } = useAuth();
+
+  const [projectName, setProjectName] = useState('Cyberpunk Neon Noir');
+  const [headline, setHeadline] = useState('CYBERPUNK NEON NOIR');
+  const [subtitle, setSubtitle] = useState('Vector typography, curved paths, and generative mesh gradients');
+  const [badgeText, setBadgeText] = useState('STUDIO MASTER');
   const [theme, setTheme] = useState<'cyber' | 'sunset' | 'obsidian' | 'emerald' | 'minimal'>('cyber');
   const [dimensions, setDimensions] = useState<{ width: number; height: number; label: string }>({
     width: 1200,
@@ -34,81 +35,79 @@ export const StudioView: React.FC<StudioViewProps> = () => {
     label: 'OpenGraph (1200x630)'
   });
   const [zoom, setZoom] = useState(100);
-  const [activeTab, setActiveTab] = useState<'presets' | 'typography' | 'mesh' | 'badges' | 'api'>('mesh');
+  const [activeTab, setActiveTab] = useState<'mesh' | 'typography' | 'badges' | 'api'>('mesh');
   const [copiedCode, setCopiedCode] = useState(false);
-  const [selectedTechBadges, setSelectedTechBadges] = useState<string[]>(['AWS', 'Docker', 'PostgreSQL']);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [selectedCreativeTags, setSelectedCreativeTags] = useState<string[]>(['VECTOR 4K', 'RETRO 80S', 'NEON SHADER']);
 
   const themes = {
     cyber: {
-      bg: 'from-[#090a14] via-[#10172e] to-[#062442]',
-      accent: '#00f2fe',
-      glow: '#00f2fe',
-      textColor: '#ffffff'
+      bg: 'from-[#0A0E1A] via-[#0E1528] to-[#08203D]',
+      accent: '#00F2FE',
+      glow: '#00F2FE',
+      badgeBg: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
     },
     sunset: {
-      bg: 'from-[#140b0d] via-[#2c0e1b] to-[#401815]',
-      accent: '#ff7a18',
-      glow: '#ff7a18',
-      textColor: '#ffffff'
+      bg: 'from-[#170C0F] via-[#2A111E] to-[#401815]',
+      accent: '#FF7A18',
+      glow: '#FF7A18',
+      badgeBg: 'bg-orange-500/10 border-orange-500/30 text-orange-400'
     },
     obsidian: {
-      bg: 'from-[#090a0f] via-[#131520] to-[#1a1c2b]',
-      accent: '#e5e7eb',
-      glow: '#9ca3af',
-      textColor: '#ffffff'
+      bg: 'from-[#090A0F] via-[#131520] to-[#1A1C2B]',
+      accent: '#E5E7EB',
+      glow: '#9CA3AF',
+      badgeBg: 'bg-white/10 border-white/20 text-gray-200'
     },
     emerald: {
-      bg: 'from-[#08120e] via-[#0f291e] to-[#063826]',
-      accent: '#00e676',
-      glow: '#00e676',
-      textColor: '#ffffff'
+      bg: 'from-[#08120E] via-[#0F291E] to-[#063826]',
+      accent: '#00E676',
+      glow: '#00E676',
+      badgeBg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
     },
     minimal: {
-      bg: 'from-[#101217] via-[#161822] to-[#1c202d]',
-      accent: '#a5b4fc',
-      glow: '#818cf8',
-      textColor: '#ffffff'
+      bg: 'from-[#101217] via-[#161822] to-[#1C202D]',
+      accent: '#A5B4FC',
+      glow: '#818CF8',
+      badgeBg: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
     }
   };
 
   const presetSizes = [
-    { width: 1200, height: 630, label: 'OpenGraph (1200x630)' },
+    { width: 1200, height: 630, label: 'OpenGraph Card (1200x630)' },
     { width: 1280, height: 640, label: 'GitHub Header (1280x640)' },
-    { width: 1500, height: 500, label: 'Twitter/X (1500x500)' },
-    { width: 240, height: 240, label: 'Badge Card (240x240)' }
+    { width: 1500, height: 500, label: 'Twitter/X Cover (1500x500)' },
+    { width: 1080, height: 1080, label: 'Square Post (1080x1080)' }
   ];
 
-  const availableBadges = ['AWS', 'Docker', 'Kubernetes', 'React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'Redis', 'DevSecOps', 'Linux'];
+  const creativeTags = [
+    'VECTOR 4K', 'RETRO 80S', 'NEON SHADER', 'EDITORIAL', 'SWISS TYPE', 'BAUHAUS', 'MINIMALIST', 'VINTAGE BADGE'
+  ];
 
-  const toggleBadge = (item: string) => {
-    if (selectedTechBadges.includes(item)) {
-      setSelectedTechBadges(selectedTechBadges.filter(b => b !== item));
+  const toggleTag = (tag: string) => {
+    if (selectedCreativeTags.includes(tag)) {
+      setSelectedCreativeTags(selectedCreativeTags.filter(t => t !== tag));
     } else {
-      setSelectedTechBadges([...selectedTechBadges, item]);
+      setSelectedCreativeTags([...selectedCreativeTags, tag]);
     }
   };
 
-  // Generate lossless SVG master string for download or dynamic API
   const generateSvgMarkup = () => {
     const currentTheme = themes[theme];
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#090a12"/>
-      <stop offset="50%" stop-color="#12182d"/>
-      <stop offset="100%" stop-color="#062947"/>
+      <stop offset="0%" stop-color="#0A0E1A"/>
+      <stop offset="50%" stop-color="#0E1528"/>
+      <stop offset="100%" stop-color="#08203D"/>
     </linearGradient>
     <radialGradient id="meshGlow" cx="0.8" cy="0.2" r="0.7">
       <stop offset="0%" stop-color="${currentTheme.accent}" stop-opacity="0.35"/>
       <stop offset="100%" stop-color="${currentTheme.accent}" stop-opacity="0"/>
     </radialGradient>
-    <pattern id="dotGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="1.2" fill="#ffffff" opacity="0.08"/>
-    </pattern>
   </defs>
   
   <rect width="${dimensions.width}" height="${dimensions.height}" fill="url(#bgGrad)"/>
-  <rect width="${dimensions.width}" height="${dimensions.height}" fill="url(#dotGrid)"/>
   <rect width="${dimensions.width}" height="${dimensions.height}" fill="url(#meshGlow)"/>
   <rect x="0" y="0" width="${dimensions.width}" height="3" fill="${currentTheme.accent}"/>
 
@@ -139,6 +138,39 @@ export const StudioView: React.FC<StudioViewProps> = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleSaveToCloud = async () => {
+    if (!token) {
+      alert('Please sign in to save your artwork to the cloud library.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/v1/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: projectName,
+          width: dimensions.width,
+          height: dimensions.height,
+          theme,
+          headline,
+          subtitle,
+          badgeText
+        })
+      });
+
+      if (res.ok) {
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 2000);
+      }
+    } catch (err) {
+      console.error('Failed to save project:', err);
+    }
+  };
+
   const dynamicApiUrl = `http://localhost:5000/api/v1/render/og?title=${encodeURIComponent(headline)}&subtitle=${encodeURIComponent(subtitle)}&theme=${theme}&badge=${encodeURIComponent(badgeText)}`;
 
   const copyApiSnippet = () => {
@@ -148,17 +180,31 @@ export const StudioView: React.FC<StudioViewProps> = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0a0b12] text-gray-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-[#07080C] text-gray-900 dark:text-gray-100 overflow-hidden select-none transition-colors">
       {/* 1. TOP STUDIO BAR */}
-      <header className="h-14 border-b border-[#1b1f2f] bg-[#0e101a] px-4 flex items-center justify-between z-20">
+      <header className="h-14 border-b border-gray-200 dark:border-[#171D2E] bg-white dark:bg-[#0B0E17] px-4 flex items-center justify-between z-20">
         <div className="flex items-center space-x-3">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#141826] transition-colors"
+              title="Return to Dashboard"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
+
+          <BrandLogo size="sm" showDomain={false} />
+
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+
           <input
             type="text"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
-            className="bg-transparent text-sm font-semibold text-white px-2 py-1 rounded hover:bg-[#181c2e] focus:bg-[#181c2e] focus:outline-none transition-colors max-w-xs"
+            className="bg-transparent text-xs sm:text-sm font-semibold text-gray-900 dark:text-white px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-[#161C2C] focus:bg-gray-100 dark:focus:bg-[#161C2C] focus:outline-none transition-colors max-w-xs"
           />
-          <span className="text-gray-500 text-xs">/</span>
+
           {/* Preset Size Picker */}
           <select
             value={dimensions.label}
@@ -166,7 +212,7 @@ export const StudioView: React.FC<StudioViewProps> = () => {
               const selected = presetSizes.find(s => s.label === e.target.value);
               if (selected) setDimensions(selected);
             }}
-            className="bg-[#151827] border border-[#23283c] text-xs text-gray-300 rounded-md px-2 py-1 focus:outline-none"
+            className="bg-gray-100 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] text-xs text-gray-700 dark:text-gray-300 rounded-lg px-2.5 py-1 focus:outline-none"
           >
             {presetSizes.map(s => (
               <option key={s.label} value={s.label}>{s.label}</option>
@@ -174,16 +220,16 @@ export const StudioView: React.FC<StudioViewProps> = () => {
           </select>
         </div>
 
-        {/* Zoom & Viewport Controls */}
+        {/* Center Viewport Zoom */}
         <div className="hidden sm:flex items-center space-x-2">
-          <button onClick={() => setZoom(Math.max(50, zoom - 10))} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#191d30]">
+          <button onClick={() => setZoom(Math.max(50, zoom - 10))} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-gray-400 w-12 text-center">{zoom}%</span>
-          <button onClick={() => setZoom(Math.min(150, zoom + 10))} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#191d30]">
+          <span className="text-xs font-mono text-gray-500 w-12 text-center">{zoom}%</span>
+          <button onClick={() => setZoom(Math.min(150, zoom + 10))} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button onClick={() => setZoom(100)} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-[#191d30]" title="Reset Zoom">
+          <button onClick={() => setZoom(100)} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Reset Zoom">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -191,44 +237,51 @@ export const StudioView: React.FC<StudioViewProps> = () => {
         {/* Action Buttons */}
         <div className="flex items-center space-x-2">
           <button
-            onClick={copyApiSnippet}
-            className="px-3 py-1.5 rounded-lg border border-[#252b42] text-xs font-medium text-gray-300 hover:text-white hover:bg-[#191c2e] flex items-center space-x-1.5 transition-colors"
+            onClick={handleSaveToCloud}
+            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-[#222A40] text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#161C2C] flex items-center space-x-1.5 transition-colors"
           >
-            {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-gray-400" />}
-            <span>{copiedCode ? 'Copied Meta Tag!' : 'Copy OG Link'}</span>
+            {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Save className="w-3.5 h-3.5" />}
+            <span>{savedSuccess ? 'Saved!' : 'Save'}</span>
+          </button>
+
+          <button
+            onClick={copyApiSnippet}
+            className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-[#222A40] text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#161C2C] flex items-center space-x-1.5 transition-colors"
+          >
+            {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedCode ? 'Copied' : 'Embed Link'}</span>
           </button>
 
           <button
             onClick={handleDownloadSvg}
-            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-rose-500 text-xs font-semibold text-white shadow-lg shadow-orange-500/20 hover:opacity-95 transition-all flex items-center space-x-1.5"
+            className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all flex items-center space-x-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export Vector SVG</span>
+            <span>Export 4K SVG</span>
           </button>
         </div>
       </header>
 
-      {/* 2. MAIN WORKSPACE (Tool Drawer + Center Canvas + Properties Inspector) */}
+      {/* 2. MAIN WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Tool Drawer */}
-        <aside className="w-72 bg-[#0e101a] border-r border-[#1b1f2f] flex flex-col z-10">
-          {/* Tool Drawer Tab Switcher */}
-          <div className="flex border-b border-[#1b1f2f] bg-[#0c0e16]">
+        <aside className="w-72 bg-white dark:bg-[#0B0E17] border-r border-gray-200 dark:border-[#171D2E] flex flex-col z-10">
+          <div className="flex border-b border-gray-200 dark:border-[#171D2E] bg-gray-50/50 dark:bg-[#080A10]">
             {[
-              { id: 'mesh', label: 'Theme', icon: Palette },
-              { id: 'typography', label: 'Text', icon: Type },
-              { id: 'badges', label: 'Badges', icon: Tag },
-              { id: 'api', label: 'API', icon: Code }
+              { id: 'mesh', label: 'Colorway', icon: Palette },
+              { id: 'typography', label: 'Typography', icon: Type },
+              { id: 'badges', label: 'Tags', icon: Tag },
+              { id: 'api', label: 'Dynamic API', icon: Code }
             ].map(tab => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 py-3 text-xs font-medium flex flex-col items-center space-y-1 transition-colors ${
+                  className={`flex-1 py-3 text-xs font-semibold flex flex-col items-center space-y-1 transition-colors ${
                     activeTab === tab.id
-                      ? 'text-orange-400 border-b-2 border-orange-500 bg-[#141624]'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-500 bg-white dark:bg-[#121624]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -238,11 +291,10 @@ export const StudioView: React.FC<StudioViewProps> = () => {
             })}
           </div>
 
-          {/* Tool Tab Content */}
           <div className="p-4 space-y-5 flex-1 overflow-y-auto">
             {activeTab === 'mesh' && (
               <div className="space-y-4">
-                <h4 className="text-xs font-mono uppercase text-gray-400 tracking-wider">Atmospheric Colorways</h4>
+                <h4 className="text-xs font-mono uppercase text-gray-500 font-bold tracking-wider">Atmospheric Colorways</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {(Object.keys(themes) as Array<keyof typeof themes>).map(t => (
                     <button
@@ -250,8 +302,8 @@ export const StudioView: React.FC<StudioViewProps> = () => {
                       onClick={() => setTheme(t)}
                       className={`p-3 rounded-xl border text-left text-xs capitalize transition-all ${
                         theme === t
-                          ? 'border-orange-500 bg-[#1a1c2e] text-white font-bold'
-                          : 'border-[#202538] bg-[#121420] text-gray-400 hover:text-white'
+                          ? 'border-cyan-500 bg-cyan-50/50 dark:bg-[#161C2C] text-gray-900 dark:text-white font-bold ring-1 ring-cyan-500/50'
+                          : 'border-gray-200 dark:border-[#1F273D] bg-white dark:bg-[#0E121E] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <div className="w-4 h-4 rounded-full mb-2" style={{ backgroundColor: themes[t].accent }} />
@@ -265,30 +317,30 @@ export const StudioView: React.FC<StudioViewProps> = () => {
             {activeTab === 'typography' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-mono text-gray-400 mb-1">Headline Text</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Headline Text</label>
                   <input
                     type="text"
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
-                    className="w-full bg-[#151724] border border-[#23273c] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-50 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-gray-400 mb-1">Subtitle</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Tagline</label>
                   <textarea
                     rows={3}
                     value={subtitle}
                     onChange={(e) => setSubtitle(e.target.value)}
-                    className="w-full bg-[#151724] border border-[#23273c] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-50 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-gray-400 mb-1">Category Badge Pill</label>
+                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Badge Pill Text</label>
                   <input
                     type="text"
                     value={badgeText}
                     onChange={(e) => setBadgeText(e.target.value)}
-                    className="w-full bg-[#151724] border border-[#23273c] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-gray-50 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -296,17 +348,17 @@ export const StudioView: React.FC<StudioViewProps> = () => {
 
             {activeTab === 'badges' && (
               <div className="space-y-3">
-                <h4 className="text-xs font-mono uppercase text-gray-400 tracking-wider">Tech Stack Stamping</h4>
-                <p className="text-[11px] text-gray-500">Toggle technology logos to stamp into the banner footer:</p>
+                <h4 className="text-xs font-mono uppercase text-gray-500 font-bold tracking-wider">Creative Style Stamping</h4>
+                <p className="text-[11px] text-gray-500">Toggle design tags to stamp onto the bottom of the card:</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {availableBadges.map(item => (
+                  {creativeTags.map(item => (
                     <button
                       key={item}
-                      onClick={() => toggleBadge(item)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all ${
-                        selectedTechBadges.includes(item)
-                          ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300 font-semibold'
-                          : 'bg-[#151724] border border-[#23273a] text-gray-400 hover:text-white'
+                      onClick={() => toggleTag(item)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${
+                        selectedCreativeTags.includes(item)
+                          ? 'bg-cyan-500/10 border border-cyan-500/40 text-cyan-600 dark:text-cyan-400 font-bold'
+                          : 'bg-gray-100 dark:bg-[#141826] border border-gray-200 dark:border-[#20273D] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       {item}
@@ -318,28 +370,27 @@ export const StudioView: React.FC<StudioViewProps> = () => {
 
             {activeTab === 'api' && (
               <div className="space-y-4">
-                <h4 className="text-xs font-mono uppercase text-gray-400 tracking-wider">Headless Dynamic Endpoint</h4>
-                <p className="text-xs text-gray-400">
-                  Embed this live URL directly inside your GitHub README, website meta tags, or blog cards:
+                <h4 className="text-xs font-mono uppercase text-gray-500 font-bold tracking-wider">Dynamic OpenGraph URL</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Embed this live URL in your website metadata or social share cards for real-time rendering:
                 </p>
-                <div className="bg-[#090a10] border border-[#1e2335] rounded-lg p-2.5 font-mono text-[11px] text-gray-300 break-all select-all">
+                <div className="bg-gray-100 dark:bg-[#08090E] border border-gray-200 dark:border-[#1E2538] rounded-xl p-3 font-mono text-[11px] text-gray-700 dark:text-gray-300 break-all select-all">
                   {dynamicApiUrl}
                 </div>
                 <button
                   onClick={copyApiSnippet}
-                  className="w-full py-2 rounded-lg bg-[#181c2d] hover:bg-[#20253c] text-xs font-medium text-white border border-[#252c44] flex items-center justify-center space-x-1.5"
+                  className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-[#161C2C] border border-gray-200 dark:border-[#222A40] text-xs font-semibold text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#1E2538] flex items-center justify-center space-x-1.5 transition-colors"
                 >
-                  <Copy className="w-3.5 h-3.5 text-gray-400" />
-                  <span>Copy Meta Tag</span>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy HTML Meta Tag</span>
                 </button>
               </div>
             )}
           </div>
         </aside>
 
-        {/* Center Infinite Workbench */}
-        <main className="flex-1 overflow-auto p-8 flex items-center justify-center canvas-dot-grid relative bg-[#090a0f]">
-          {/* The Artwork Canvas with drop shadow */}
+        {/* Center Workbench with Dotted Mesh */}
+        <main className="flex-1 overflow-auto p-8 flex items-center justify-center canvas-dot-grid relative bg-gray-100 dark:bg-[#07080D]">
           <div
             style={{
               width: `${dimensions.width * 0.65}px`,
@@ -347,39 +398,39 @@ export const StudioView: React.FC<StudioViewProps> = () => {
               transform: `scale(${zoom / 100})`,
               transformOrigin: 'center center'
             }}
-            className={`rounded-xl bg-gradient-to-br ${themes[theme].bg} border border-[#22273c] p-8 relative shadow-2xl flex flex-col justify-between transition-all duration-300 overflow-hidden shrink-0`}
+            className={`rounded-2xl bg-gradient-to-br ${themes[theme].bg} border border-gray-200 dark:border-[#222A40] p-8 sm:p-12 relative shadow-2xl flex flex-col justify-between transition-all duration-300 overflow-hidden shrink-0`}
           >
             {/* Top Badge */}
             <div className="relative z-10">
               <span
                 style={{ borderColor: themes[theme].accent, color: themes[theme].accent }}
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider bg-[#0d0f1a]/80 border shadow-lg"
+                className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-mono font-bold tracking-wider bg-black/60 border shadow-lg backdrop-blur-md"
               >
                 ● {badgeText.toUpperCase()}
               </span>
             </div>
 
-            {/* Main Typography */}
+            {/* Main Headline */}
             <div className="relative z-10 space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
+              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-snug">
                 {headline}
               </h2>
-              <p className="text-xs sm:text-sm text-gray-300 max-w-lg">
+              <p className="text-xs sm:text-sm text-gray-300 max-w-lg font-normal">
                 {subtitle}
               </p>
             </div>
 
-            {/* Bottom Meta & Stamped Badges */}
+            {/* Bottom Meta & Stamped Tags */}
             <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between">
               <div className="flex items-center space-x-1.5">
-                {selectedTechBadges.map(b => (
-                  <span key={b} className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/50 border border-white/10 text-gray-300">
-                    {b}
+                {selectedCreativeTags.map(tag => (
+                  <span key={tag} className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/50 border border-white/10 text-gray-300">
+                    {tag}
                   </span>
                 ))}
               </div>
               <span className="text-[10px] font-mono text-gray-400">
-                SNAPBRAND ENGINE • 4K LOSSLESS
+                SNAPBRAND STUDIO • 4K LOSSLESS
               </span>
             </div>
           </div>

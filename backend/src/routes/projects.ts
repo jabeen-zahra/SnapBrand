@@ -1,73 +1,59 @@
 import { Router, Request, Response } from 'express';
+import { db } from '../db';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
-interface Project {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  theme: string;
-  headline: string;
-  subtitle: string;
-  badge: string;
-  updatedAt: string;
-  tags: string[];
-}
-
-let userProjects: Project[] = [
-  {
-    id: 'proj-001',
-    name: 'DevOps Final Showcase Banner',
-    width: 1280,
-    height: 640,
-    theme: 'cyber',
-    headline: 'SnapBrand Cloud Infrastructure',
-    subtitle: 'Docker, ASG, ALB, CloudWatch and Trivy',
-    badge: 'DEVSECOPS',
-    updatedAt: new Date().toISOString(),
-    tags: ['devops', 'aws', 'showcase']
-  },
-  {
-    id: 'proj-002',
-    name: 'GitHub OpenGraph Card',
-    width: 1200,
-    height: 630,
-    theme: 'sunset',
-    headline: 'Zero-Trust Pipeline Demo',
-    subtitle: 'Multi-stage builds and automated rollbacks',
-    badge: 'PRODUCTION',
-    updatedAt: new Date(Date.now() - 3600000).toISOString(),
-    tags: ['github', 'branding']
-  }
-];
-
-router.get('/', (req: Request, res: Response) => {
-  res.json(userProjects);
+// GET /api/v1/projects - Fetch projects owned by authenticated user
+router.get('/', requireAuth, (req: Request, res: Response) => {
+  const projects = db.getProjectsByUserId(req.user!.id);
+  res.status(200).json(projects);
 });
 
-router.post('/', (req: Request, res: Response) => {
-  const { name, width, height, theme, headline, subtitle, badge, tags } = req.body;
-  const newProject: Project = {
-    id: `proj-${Date.now()}`,
-    name: name || 'Untitled Project',
+// POST /api/v1/projects - Create a new brand project
+router.post('/', requireAuth, (req: Request, res: Response) => {
+  const { name, width, height, theme, headline, subtitle, badgeText, canvasData } = req.body;
+
+  const newProject = db.createProject({
+    id: `proj_${Date.now()}`,
+    userId: req.user!.id,
+    name: name || 'Untitled Artwork',
     width: width || 1200,
     height: height || 630,
     theme: theme || 'cyber',
-    headline: headline || 'My Project Title',
-    subtitle: subtitle || 'Project description goes here',
-    badge: badge || 'DEV',
-    updatedAt: new Date().toISOString(),
-    tags: tags || ['custom']
-  };
-  userProjects.unshift(newProject);
+    headline: headline || 'My Project Headline',
+    subtitle: subtitle || 'Design description and styling details',
+    badgeText: badgeText || 'BRAND ASSET',
+    canvasData: canvasData || {},
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
   res.status(201).json(newProject);
 });
 
-router.delete('/:id', (req: Request, res: Response) => {
+// PUT /api/v1/projects/:id - Update existing project
+router.put('/:id', requireAuth, (req: Request, res: Response) => {
   const { id } = req.params;
-  userProjects = userProjects.filter(p => p.id !== id);
-  res.json({ success: true, deletedId: id });
+  const updated = db.updateProject(id, req.user!.id, req.body);
+
+  if (!updated) {
+    return res.status(404).json({ error: 'Project not found or unauthorized.' });
+  }
+
+  res.status(200).json(updated);
+});
+
+// DELETE /api/v1/projects/:id - Remove project
+router.delete('/:id', requireAuth, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const deleted = db.deleteProject(id, req.user!.id);
+
+  if (!deleted) {
+    return res.status(404).json({ error: 'Project not found or unauthorized.' });
+  }
+
+  res.status(200).json({ success: true, deletedId: id });
 });
 
 export default router;
