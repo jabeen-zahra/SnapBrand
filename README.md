@@ -209,8 +209,8 @@ snapbrand/
 ### 1. Launch with One Command
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/snapbrand.git
-cd snapbrand
+git clone https://github.com/jabeen-zahra/SnapBrand.git
+cd SnapBrand
 
 # Copy environment template
 cp .env.example .env
@@ -273,6 +273,29 @@ k6 run --vus 50 --duration 3m scripts/load_test.js
 
 ---
 
-## License & Team
+## Team & Contribution Matrix
+
+In strict accordance with project submission criteria, all members contributed to core code, containerization, pipelines, and deployment:
+
+| Member Name | Email / GitHub | Project Ownership & Traceable Deliverables |
+|---|---|---|
+| **Jabeen Zahra** | [kaneezezahra313@gmail.com](mailto:kaneezezahra313@gmail.com) <br/>`@jabeen-zahra` | **Project Architecture & Frontend Engineering**: <br/>• Interactive 3D vector canvas studio, live curve transformer & color moods <br/>• Gamma-style responsive interface, light/dark mode theme system <br/>• Client-side JWT session handling, Brand Kit manager, and template library |
+| **Mirfaq Javaid** | [mirfaqjavaid@gmail.com](mailto:mirfaqjavaid@gmail.com) | **Backend Microservices & Containerization**: <br/>• Node.js & TypeScript REST API with `/health` and `/metrics` probes <br/>• Multi-stage Dockerfiles (Node 20 Alpine, non-root user `UID 10001`, Hadolint) <br/>• Database persistence (SQLite/JSON), bcrypt password hashing, and unit tests (80%+ coverage) |
+| **Fatima Ijaz** | [f6618568@gmail.com](mailto:f6618568@gmail.com) | **Cloud Infrastructure & DevSecOps Lead**: <br/>• 12-Stage GitHub Actions CI/CD Pipeline (Gitleaks, SonarCloud, Snyk, Trivy) <br/>• Hardened bash automation scripts with `set -euo pipefail` passing ShellCheck <br/>• AWS Multi-AZ VPC architecture, Auto Scaling Group (ASG), and CloudWatch monitoring |
+
+---
+
+## Branching Strategy & Contribution Workflow
+
+SnapBrand enforces a disciplined **Trunk-Based / Feature-Branch Workflow**:
+* `main`: Protected production branch. Direct pushes are blocked. Merges require:
+  1. Passing all 10 automated pre-merge CI checks (Stages 1 to 10).
+  2. At least one pull request review approval from a team member.
+* `feature/<feature-name>`: Dedicated feature branches for ongoing development.
+* `fix/<bug-name>`: Targeted defect remediations.
+
+---
+
+## License
 Built with precision for the **DevOps & Cloud Engineering Final Showcase**.  
 Licensed under the [MIT License](LICENSE).
