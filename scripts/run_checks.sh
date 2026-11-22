@@ -12,6 +12,8 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+trap 'echo -e "\n${RED}✗ Check failed at line ${LINENO}. Pre-commit verification aborted.${NC}"' ERR
+
 echo -e "${CYAN}====================================================${NC}"
 echo -e "${CYAN}   SnapBrand DevSecOps Local Verification Suite     ${NC}"
 echo -e "${CYAN}====================================================${NC}"
