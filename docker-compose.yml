@@ -1,0 +1,7 @@
+version: '3.8'
+
+# Root Docker Compose proxying to production/development configuration
+# Allows running `docker compose up -d` directly from the repository root
+
+include:
+  - infra/docker-compose.yml

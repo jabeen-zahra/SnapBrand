@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-label="SnapBrand: Studio-Grade Brand Assets and Edge Visual Engine">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#090a0f"/>
+      <stop offset="100%" stop-color="#12131c"/>
+    </linearGradient>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7a18"/>
+      <stop offset="50%" stop-color="#af002d"/>
+      <stop offset="100%" stop-color="#319197"/>
+    </linearGradient>
+    <linearGradient id="neonOrange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff914d"/>
+      <stop offset="100%" stop-color="#ff3b30"/>
+    </linearGradient>
+    <linearGradient id="neonCyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#4facfe"/>
+    </linearGradient>
+    <radialGradient id="glowLeft" cx="0.2" cy="0.4" r="0.6">
+      <stop offset="0%" stop-color="#ff5722" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ff5722" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowRight" cx="0.8" cy="0.3" r="0.6">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1f2333" opacity="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1280" height="320" rx="20" fill="url(#bg)"/>
+  <rect width="1280" height="320" rx="20" fill="url(#grid)"/>
+  <rect width="1280" height="320" rx="20" fill="url(#glowLeft)"/>
+  <rect width="1280" height="320" rx="20" fill="url(#glowRight)"/>
+  
+  <!-- Subtle top and bottom border accents -->
+  <rect x="0" y="0" width="1280" height="2" fill="url(#neonOrange)" opacity="0.4"/>
+  <rect x="0" y="318" width="1280" height="2" fill="url(#neonCyan)" opacity="0.4"/>
+
+  <!-- Logo Mark Graphic -->
+  <g transform="translate(85, 75)">
+    <!-- Outer Isometric Diamond Shield -->
+    <path d="M 80 10 L 145 48 L 145 122 L 80 160 L 15 122 L 15 48 Z" 
+          fill="#131522" stroke="url(#neonOrange)" stroke-width="3.5" stroke-linejoin="round" />
+    <!-- Inner faceted geometric lines -->
+    <path d="M 80 10 L 80 160" stroke="#252a3d" stroke-width="2" />
+    <path d="M 15 48 L 145 122" stroke="#252a3d" stroke-width="1.5" opacity="0.5" />
+    <path d="M 145 48 L 15 122" stroke="#252a3d" stroke-width="1.5" opacity="0.5" />
+    <!-- Stylized S-Spark in core -->
+    <path d="M 98 42 L 62 76 L 98 94 L 62 128" 
+          fill="none" stroke="url(#neonCyan)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="80" cy="85" r="5" fill="#ffffff" />
+  </g>
+
+  <!-- Typography & Copy -->
+  <!-- Brand Wordmark -->
+  <text x="270" y="148" font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1.5">
+    Snap<tspan fill="#ff7a18">Brand</tspan>
+  </text>
+  
+  <!-- Status Badge Pill -->
+  <g transform="translate(635, 108)">
+    <rect width="138" height="28" rx="14" fill="#1c2033" stroke="#2e3550" stroke-width="1"/>
+    <circle cx="14" cy="14" r="4.5" fill="#00e676"/>
+    <text x="26" y="19" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="600" fill="#00e676" letter-spacing="1">PROD READY</text>
+  </g>
+
+  <!-- Product Tagline -->
+  <text x="272" y="196" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="22" font-weight="400" fill="#9ca3af">
+    Studio-Grade Brand Assets &amp; Edge Dynamic Visual Engine
+  </text>
+
+  <!-- DevOps & Tech Stack Meta Specs -->
+  <text x="272" y="240" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="500" fill="#4b5563" letter-spacing="2">
+    12-STAGE DEVSECOPS  |  AWS MULTI-AZ VPC  |  REACT 19  |  NODE.JS  |  DOCKER  |  POSTGRESQL
+  </text>
+</svg>
