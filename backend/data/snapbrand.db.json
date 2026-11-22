@@ -39,9 +39,47 @@
       "themePreference": "dark",
       "avatar": "https://api.dicebear.com/7.x/shapes/svg?seed=Alexander%20Wright",
       "createdAt": "2026-11-22T16:16:52.925Z"
+    },
+    {
+      "id": "usr_1795372119033",
+      "email": "nafessa@gmail.com",
+      "passwordHash": "$2b$10$GDnsY.el0ass9G20sglpXOKJ5s4.QowXTBaKQgUtKtFBMDoyVJqF6",
+      "fullName": "Jabeen Zahra",
+      "plan": "Pro Creator",
+      "themePreference": "dark",
+      "avatar": "https://api.dicebear.com/7.x/shapes/svg?seed=Jabeen%20Zahra",
+      "createdAt": "2026-11-22T18:28:39.033Z"
     }
   ],
   "projects": [
+    {
+      "id": "proj_1795364457479",
+      "userId": "usr_demo_creator",
+      "name": "Cyberpunk Neon Noir",
+      "width": 1500,
+      "height": 500,
+      "theme": "cyber",
+      "headline": "CYBERPUNK NEON NOIR",
+      "subtitle": "Vector typography, curved paths, and generative mesh gradients",
+      "badgeText": "STUDIO MASTER",
+      "canvasData": {},
+      "createdAt": "2026-11-22T16:20:57.479Z",
+      "updatedAt": "2026-11-22T16:20:57.479Z"
+    },
+    {
+      "id": "proj_1795364449985",
+      "userId": "usr_demo_creator",
+      "name": "Cyberpunk Neon Noir",
+      "width": 1200,
+      "height": 630,
+      "theme": "cyber",
+      "headline": "CYBERPUNK NEON NOIR",
+      "subtitle": "Vector typography, curved paths, and generative mesh gradients",
+      "badgeText": "STUDIO MASTER",
+      "canvasData": {},
+      "createdAt": "2026-11-22T16:20:49.985Z",
+      "updatedAt": "2026-11-22T16:20:49.985Z"
+    },
     {
       "id": "proj_1795364213022",
       "userId": "usr_1795364212925",

@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { 
-  Sparkles, 
   ArrowRight, 
-  Zap, 
-  Layers, 
+  Sparkles, 
   Type, 
   Palette, 
   Sliders, 
   Download, 
   Check, 
   ChevronDown, 
-  Maximize2,
-  Brush,
-  Eye,
+  Layers, 
+  Move,
   Shapes,
-  Laptop
+  Maximize2
 } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 
@@ -24,379 +21,358 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchStudio, onOpenAuth }) => {
-  // Live Interactive Hero Sandbox State (Pure design controls)
-  const [headline, setHeadline] = useState('CREATIVE HORIZON');
-  const [tagline, setTagline] = useState('Next-Generation Vector Graphics & Brand Assets');
-  const [selectedStyle, setSelectedStyle] = useState<'cyber' | 'sunset' | 'editorial' | 'retro'>('cyber');
-  const [curvedText, setCurvedText] = useState(false);
-  const [letterSpacing, setLetterSpacing] = useState(4);
+  // Thoughtful Hero Design Playground State
+  const [headline, setHeadline] = useState('HERITAGE CRAFT');
+  const [subheading, setSubheading] = useState('Est. 2026 • Original Vector Design');
+  const [curveMode, setCurveMode] = useState<'straight' | 'arch' | 'wave' | 'badge'>('arch');
+  const [paletteMood, setPaletteMood] = useState<'graphite' | 'terracotta' | 'forest' | 'cream'>('graphite');
+  const [fontFamily, setFontFamily] = useState<'serif' | 'sans' | 'display'>('display');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [annualBilling, setAnnualBilling] = useState(true);
 
-  const stylePresets = {
-    cyber: {
-      bg: 'from-[#0A0E1A] via-[#0E1528] to-[#08203D]',
-      accent: '#00F2FE',
-      pill: 'CYBER EDITION',
-      fontStyle: 'font-extrabold uppercase tracking-widest text-cyan-400',
-      border: 'border-cyan-500/40'
+  // Thoughtful Color Moods (Matte, tactile, real design tones — NO neon glow)
+  const colorMoods = {
+    graphite: {
+      canvas: 'bg-[#18191E] text-white',
+      cardBorder: 'border-[#2C2E38]',
+      accent: '#38BDF8',
+      tagBg: 'bg-white/10 text-gray-200',
+      ornament: '#64748B'
     },
-    sunset: {
-      bg: 'from-[#170C0F] via-[#2A111E] to-[#401815]',
-      accent: '#FF7A18',
-      pill: 'GOLDEN HOUR',
-      fontStyle: 'font-extrabold tracking-tight text-orange-400',
-      border: 'border-orange-500/40'
+    terracotta: {
+      canvas: 'bg-[#2A1810] text-[#FED7AA]',
+      cardBorder: 'border-[#4A2D1F]',
+      accent: '#FB923C',
+      tagBg: 'bg-amber-500/20 text-amber-200',
+      ornament: '#F97316'
     },
-    editorial: {
-      bg: 'from-[#0B0D13] via-[#141824] to-[#1C2033]',
-      accent: '#E2E8F0',
-      pill: 'MODERN MONO',
-      fontStyle: 'font-bold uppercase tracking-wider text-gray-100',
-      border: 'border-gray-500/40'
+    forest: {
+      canvas: 'bg-[#101F18] text-[#BBF7D0]',
+      cardBorder: 'border-[#1E3B2E]',
+      accent: '#34D399',
+      tagBg: 'bg-emerald-500/20 text-emerald-200',
+      ornament: '#10B981'
     },
-    retro: {
-      bg: 'from-[#091512] via-[#0E261E] to-[#073625]',
-      accent: '#00E676',
-      pill: 'VINTAGE BADGE',
-      fontStyle: 'font-black tracking-tight text-emerald-400',
-      border: 'border-emerald-500/40'
+    cream: {
+      canvas: 'bg-[#F4EFE6] text-[#2D2823]',
+      cardBorder: 'border-[#DCD3C4]',
+      accent: '#C2410C',
+      tagBg: 'bg-black/10 text-gray-800',
+      ornament: '#78350F'
     }
   };
 
-  const currentPreset = stylePresets[selectedStyle];
+  const currentMood = colorMoods[paletteMood];
 
   const faqs = [
     {
-      q: 'What makes SnapBrand different from generic design tools?',
-      a: 'SnapBrand is built from the ground up for high-precision brand creation. It combines intuitive vector typography, procedural mesh gradients, and instant 4K lossless SVG/PNG exports with headless dynamic URL generation for real-time social previews.'
+      q: 'What makes SnapBrand different from standard design apps?',
+      a: 'SnapBrand is crafted specifically for creators who need custom lettering, curved typography, and vintage-to-modern badges without the steep learning curve of desktop software. Everything runs smoothly in your browser with mathematical vector precision.'
     },
     {
-      q: 'Can I export lossless vector files for print and high-res display?',
-      a: 'Yes! Every design asset maintains pure mathematical vector definitions. You can export ultra-clean SVGs, 2x Retina PNGs, or dynamic URLs with zero pixel distortion at any resolution.'
+      q: 'Can I export clean vector files for commercial use and merchandise print?',
+      a: 'Yes. Every artwork maintains pure mathematical SVG paths, so you can export infinitely scalable vectors for embroidery, screen printing, posters, or digital product cards.'
     },
     {
-      q: 'Are my brand palettes and project files securely saved?',
-      a: 'All project states, custom typography pairings, and Brand Kits are securely persisted to your account database with end-to-end user isolation and automated cloud backups.'
+      q: 'How does the live curve and text distortion engine work?',
+      a: 'Our typography engine dynamically maps glyph coordinates onto bezier curves in real time, giving you instant Arch, Wave, and Circle Badge transformations without rasterizing fonts.'
     },
     {
-      q: 'Can I generate dynamic OpenGraph cards for my blog or software?',
-      a: 'Yes! SnapBrand provides a high-speed dynamic rendering engine. Simply pass your title, subtitle, and theme as query parameters to get instant, cached visual cards for Twitter/X, GitHub, and LinkedIn.'
+      q: 'Can I save custom brand palettes and typography pairings?',
+      a: 'Yes, your Brand Kits are saved directly into your account library and can be applied to any canvas blueprint with a single click.'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#08090E] text-gray-900 dark:text-gray-100 transition-colors selection:bg-cyan-500 selection:text-white overflow-hidden">
-      {/* 1. TOP ANNOUNCEMENT PILL */}
-      <div className="border-b border-gray-200 dark:border-[#181F33] bg-gray-50/80 dark:bg-[#0D101C]/80 py-2.5 px-4 text-center">
-        <div className="inline-flex items-center space-x-2 text-xs font-medium text-gray-600 dark:text-gray-300">
-          <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold text-[10px] uppercase tracking-wider border border-cyan-500/20">
-            NEW V2.4
-          </span>
-          <span>⚡ Introducing 3D Extrusions, Curved Typography &amp; Dynamic Edge Preview</span>
-          <button onClick={onLaunchStudio} className="text-cyan-600 dark:text-cyan-400 hover:underline font-semibold ml-1">
-            Explore Studio &rarr;
-          </button>
-        </div>
-      </div>
-
-      {/* 2. HERO SECTION WITH 3D INTERACTIVE PLAYGROUND */}
-      <section className="relative pt-16 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-4xl mx-auto space-y-6">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-[#121626] border border-gray-200 dark:border-[#20273D] text-xs font-medium text-cyan-600 dark:text-cyan-400">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
-            <span>THE NEXT-GEN VECTOR &amp; BRAND DESIGN SUITE</span>
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.08]">
-            Design Iconic Brand Assets <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500">
-              Without the Complexity.
+    <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0F1014] text-gray-900 dark:text-gray-100 transition-colors duration-200">
+      {/* 1. HERO SECTION (Warm, thoughtful, designer-oriented) */}
+      <section className="relative pt-16 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto space-y-5">
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.12]">
+            Design without limits. <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-indigo-600 to-amber-600 dark:from-sky-400 dark:via-indigo-400 dark:to-orange-400">
+              Made for visual craft.
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-normal">
-            Effortlessly craft vector banners, curved typography, generative mesh backgrounds, and social previews in an intuitive studio built for modern creators.
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-normal leading-relaxed">
+            Create complex curved lettering, vintage brand badges, editorial typography, and high-resolution assets in an intuitive studio designed for creators.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
             <button
               onClick={onLaunchStudio}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-white font-bold text-sm shadow-xl shadow-cyan-500/25 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-950 font-semibold text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all shadow-md flex items-center justify-center space-x-2"
             >
-              <span>Open Studio Free</span>
+              <span>Start Designing Free</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => onOpenAuth('signup')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gray-100 dark:bg-[#131726] border border-gray-200 dark:border-[#222B42] text-gray-800 dark:text-gray-200 font-semibold text-sm hover:bg-gray-200 dark:hover:bg-[#1B2238] transition-all"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-xl border border-gray-300 dark:border-[#272A35] bg-white dark:bg-[#15171E] text-gray-800 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-[#1B1E26] transition-all"
             >
-              Create Account &rarr;
+              Create Account
             </button>
           </div>
         </div>
 
-        {/* 3D INTERACTIVE WORKBENCH SHOWCASE (Kittl-Level Real Canvas) */}
-        <div id="studio-interactive" className="mt-14 max-w-5xl mx-auto rounded-3xl border border-gray-200 dark:border-[#1F273E] bg-white dark:bg-[#0E121E] shadow-2xl p-5 sm:p-7 relative">
-          {/* Top Workbench Controls */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-gray-100 dark:border-[#1A2238] gap-4">
+        {/* 2. THE INTERACTIVE DESIGN WORKBENCH (Kittl / Gamma Experience) */}
+        <div className="mt-12 max-w-5xl mx-auto rounded-2xl border border-gray-200 dark:border-[#232630] bg-white dark:bg-[#14161C] p-4 sm:p-6 shadow-xl">
+          {/* Top Workbench Toolbar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-gray-100 dark:border-[#1E212A] gap-4">
             <div className="flex items-center space-x-3">
-              <BrandLogo size="sm" showDomain={false} />
-              <span className="text-xs font-mono text-gray-400">interactive-canvas // real-time vector</span>
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Typography Studio</span>
+              <span className="text-xs text-gray-400">•</span>
+              <span className="text-xs text-gray-500">Live Curve Transformer</span>
             </div>
 
-            {/* Aesthetic Theme Switcher */}
+            {/* Palette Mood Chips */}
             <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500 font-medium">Style:</span>
-              {(['cyber', 'sunset', 'editorial', 'retro'] as const).map(style => (
+              <span className="text-xs text-gray-400 mr-1">Palette:</span>
+              {(['graphite', 'terracotta', 'forest', 'cream'] as const).map((mood) => (
                 <button
-                  key={style}
-                  onClick={() => setSelectedStyle(style)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition-all ${
-                    selectedStyle === style
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm'
-                      : 'bg-gray-100 dark:bg-[#161B2C] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  key={mood}
+                  onClick={() => setPaletteMood(mood)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
+                    paletteMood === mood
+                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-950 font-bold shadow-sm'
+                      : 'bg-gray-100 dark:bg-[#1C1F28] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  {style}
+                  {mood}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Center 3D Interactive Canvas Box */}
-          <div className={`mt-6 rounded-2xl bg-gradient-to-br ${currentPreset.bg} border ${currentPreset.border} p-8 sm:p-14 relative min-h-[320px] sm:min-h-[360px] flex flex-col justify-between overflow-hidden shadow-inner transition-all duration-300`}>
-            {/* Background Ambient Glow */}
-            <div 
-              className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30 pointer-events-none blur-3xl"
-              style={{ backgroundColor: currentPreset.accent }}
-            />
-
-            {/* Top Badge Pill */}
-            <div className="relative z-10">
-              <span 
-                style={{ borderColor: currentPreset.accent, color: currentPreset.accent }}
-                className="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-mono font-bold tracking-wider bg-black/60 border backdrop-blur-md"
-              >
-                ● {currentPreset.pill}
+          {/* The Artwork Canvas Area */}
+          <div className={`mt-5 rounded-xl ${currentMood.canvas} border ${currentMood.cardBorder} p-8 sm:p-14 relative min-h-[320px] flex flex-col justify-between items-center text-center transition-all duration-300 shadow-inner overflow-hidden`}>
+            {/* Top Ornamental Ribbon */}
+            <div className="flex items-center space-x-3">
+              <span className="h-[1px] w-12 bg-current opacity-30" />
+              <span className={`px-3 py-0.5 rounded-full text-xs font-semibold tracking-wider ${currentMood.tagBg}`}>
+                EST. 2026
               </span>
+              <span className="h-[1px] w-12 bg-current opacity-30" />
             </div>
 
-            {/* Headline and Tagline */}
-            <div className="relative z-10 my-8 space-y-3">
-              <h2 
-                style={{ letterSpacing: `${letterSpacing}px` }}
-                className={`text-3xl sm:text-5xl ${currentPreset.fontStyle} text-white transition-all`}
-              >
-                {headline}
-              </h2>
-              <p className="text-sm sm:text-base text-gray-300 max-w-xl font-normal">
-                {tagline}
+            {/* Central Curved Typography Output */}
+            <div className="my-8 space-y-2">
+              {/* Dynamic Simulated Curve or Straight Transform */}
+              <div className="relative">
+                {curveMode === 'arch' ? (
+                  <h2 className="text-3xl sm:text-5xl font-black tracking-widest uppercase transition-all duration-200 select-none">
+                    ⌒ {headline} ⌒
+                  </h2>
+                ) : curveMode === 'wave' ? (
+                  <h2 className="text-3xl sm:text-5xl font-extrabold italic tracking-wider transition-all duration-200 select-none">
+                    ~ {headline} ~
+                  </h2>
+                ) : curveMode === 'badge' ? (
+                  <div className="inline-block p-6 rounded-full border-2 border-dashed border-current">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight uppercase select-none">
+                      ★ {headline} ★
+                    </h2>
+                  </div>
+                ) : (
+                  <h2 className="text-3xl sm:text-5xl font-black tracking-wide uppercase transition-all duration-200 select-none">
+                    {headline}
+                  </h2>
+                )}
+              </div>
+
+              <p className="text-xs sm:text-sm opacity-80 max-w-md mx-auto pt-2">
+                {subheading}
               </p>
             </div>
 
-            {/* Bottom Card Footer */}
-            <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono text-gray-400">
-              <span>SNAPBRAND STUDIO 2.4</span>
-              <span className="text-cyan-400">4K RETINA READY</span>
+            {/* Bottom Ornament */}
+            <div className="text-[11px] opacity-60 font-medium tracking-widest uppercase">
+              ✦ ORIGINAL VECTOR CRAFTSMANSHIP ✦
             </div>
           </div>
 
-          {/* Quick Design Tweakers */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* Designer Controls Bar */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Headline Text
-              </label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Headline Text</label>
               <input
                 type="text"
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                className="w-full bg-gray-50 dark:bg-[#101217] border border-gray-200 dark:border-[#22252E] rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Tagline / Subtext
-              </label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle / Est.</label>
               <input
                 type="text"
-                value={tagline}
-                onChange={(e) => setTagline(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] rounded-xl px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                value={subheading}
+                onChange={(e) => setSubheading(e.target.value)}
+                className="w-full bg-gray-50 dark:bg-[#101217] border border-gray-200 dark:border-[#22252E] rounded-lg px-3 py-2 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-sky-500"
               />
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Letter Spacing
-                </label>
-                <span className="text-[11px] font-mono text-cyan-500">{letterSpacing}px</span>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Curve Transformation</label>
+              <div className="grid grid-cols-4 gap-1">
+                {(['straight', 'arch', 'wave', 'badge'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setCurveMode(mode)}
+                    className={`py-2 text-[11px] font-semibold capitalize rounded-lg transition-all ${
+                      curveMode === mode
+                        ? 'bg-sky-500 text-white font-bold'
+                        : 'bg-gray-100 dark:bg-[#1C1F28] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
               </div>
-              <input
-                type="range"
-                min="0"
-                max="12"
-                value={letterSpacing}
-                onChange={(e) => setLetterSpacing(Number(e.target.value))}
-                className="w-full accent-cyan-500 cursor-pointer"
-              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. TRUSTED CREATIVE STRIP */}
-      <section className="py-10 border-y border-gray-200 dark:border-[#181F33] bg-gray-50/50 dark:bg-[#0A0D16]">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-xs font-mono uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-6">
-            Empowering independent designers, creative studios, and fast-growing brands
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-65 grayscale hover:grayscale-0 transition-all font-bold text-sm tracking-wide text-gray-600 dark:text-gray-400">
-            <span>DRIBBBLE</span>
-            <span>BEHANCE</span>
-            <span>PRODUCT HUNT</span>
-            <span>VERCEL</span>
-            <span>FIGMA COMMUNITY</span>
-            <span>STRIPE PRESS</span>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. CORE DESIGN CAPABILITIES (The Kittl-Tier Features) */}
-      <section id="features" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-xs font-mono uppercase tracking-widest text-cyan-500 mb-2 font-bold">
-            CRAFTED FOR CREATIVE EXCELLENCE
+      {/* 3. THOUGHTFUL FEATURES SECTION (Inspired by Kittl & Gamma) */}
+      <section className="py-20 border-t border-gray-200/80 dark:border-[#1E212A] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mb-14">
+          <span className="text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+            Built for visual craftsmanship
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mt-1.5 tracking-tight">
+            Design tools that work the way your mind does.
           </h2>
-          <p className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Everything You Need to Build High-Impact Brand Visuals
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
+            Forget wrestling with pen tool bezier nodes or complicated layer trees. Everything in SnapBrand is built to produce striking brand aesthetics in seconds.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Vector Typography */}
-          <div className="md:col-span-2 rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 group hover:border-cyan-500/40 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-6">
-              <Type className="w-6 h-6 text-cyan-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Feature 1: Advanced Lettering & Curves */}
+          <div className="rounded-2xl border border-gray-200 dark:border-[#232630] bg-white dark:bg-[#14161C] p-7 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-5">
+                <Type className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Real-Time Curved &amp; Distorted Lettering
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Transform any word into an arched banner, circular heritage stamp, or retro wavy headline with one click. Adjust angle, tracking, and curvature seamlessly.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Advanced Vector Typography &amp; Curved Paths
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md mb-6 leading-relaxed">
-              Design curved circular text, retro drop-shadows, 3D extruded lettering, and custom font tracking without losing crispness on 4K displays.
-            </p>
-            <div className="h-32 bg-white dark:bg-[#0A0D15] rounded-2xl border border-gray-200 dark:border-[#181F33] p-4 flex items-center justify-center shadow-sm">
-              <span className="text-3xl sm:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-orange-500">
-                VECTOR_PURITY_100%
+            <div className="mt-8 p-6 rounded-xl bg-gray-50 dark:bg-[#0E1015] border border-gray-100 dark:border-[#1D2028] text-center">
+              <span className="text-xl sm:text-2xl font-black tracking-widest text-gray-700 dark:text-gray-200 uppercase">
+                ★ ARCHED LETTERING ★
               </span>
             </div>
           </div>
 
-          {/* Card 2: Mesh Gradients */}
-          <div className="rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 group hover:border-orange-500/40 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-6">
-              <Palette className="w-6 h-6 text-orange-500" />
+          {/* Feature 2: Color Harmony Engine */}
+          <div className="rounded-2xl border border-gray-200 dark:border-[#232630] bg-white dark:bg-[#14161C] p-7 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-5">
+                <Palette className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Curated Color Harmonies &amp; Brand Kits
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Never second-guess color balance again. Apply tested designer palettes — from Vintage Terracotta to High-Contrast Graphite — with instant full-artwork recoloring.
+              </p>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Generative Mesh Gradients
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
-              Generate atmospheric multi-point color meshes with real-time film grain overlays and studio lighting flares.
-            </p>
-            <div className="h-28 rounded-xl bg-gradient-to-br from-orange-500/30 via-pink-500/20 to-cyan-500/30 border border-white/10" />
-          </div>
-
-          {/* Card 3: Brand Kit Hub */}
-          <div className="rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 group hover:border-emerald-500/40 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
-              <Layers className="w-6 h-6 text-emerald-500" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Centralized Brand Kits
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">
-              Store your official hex palettes, typography pairings, and watermarks to apply across projects with 1 click.
-            </p>
-            <div className="flex space-x-2">
-              <div className="w-8 h-8 rounded-full bg-cyan-400 shadow-sm" />
-              <div className="w-8 h-8 rounded-full bg-orange-500 shadow-sm" />
-              <div className="w-8 h-8 rounded-full bg-emerald-400 shadow-sm" />
-              <div className="w-8 h-8 rounded-full bg-purple-500 shadow-sm" />
+            <div className="mt-8 flex items-center justify-center space-x-3 p-6 rounded-xl bg-gray-50 dark:bg-[#0E1015] border border-gray-100 dark:border-[#1D2028]">
+              <span className="w-8 h-8 rounded-full bg-[#18191E] border border-gray-300 dark:border-white/20 shadow-sm" />
+              <span className="w-8 h-8 rounded-full bg-[#FB923C] shadow-sm" />
+              <span className="w-8 h-8 rounded-full bg-[#10B981] shadow-sm" />
+              <span className="w-8 h-8 rounded-full bg-[#F4EFE6] border border-gray-300 shadow-sm" />
             </div>
           </div>
 
-          {/* Card 4: Lossless 4K Export */}
-          <div className="md:col-span-2 rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 group hover:border-cyan-500/40 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6">
-              <Download className="w-6 h-6 text-blue-500" />
+          {/* Feature 3: Vector Asset Library */}
+          <div className="rounded-2xl border border-gray-200 dark:border-[#232630] bg-white dark:bg-[#14161C] p-7 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5">
+                <Shapes className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Handcrafted Badges, Ornaments &amp; Frames
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Elevate your graphics with authentic decorative frames, ribbon banners, stars, and seal stamps created by professional vector illustrators.
+              </p>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Lossless 4K Multi-Format Exports &amp; Dynamic OpenGraph
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm max-w-lg mb-6 leading-relaxed">
-              Export pure vector SVGs for print, 2x Retina PNGs for digital headers, or use our dynamic edge URL to auto-generate branded social preview cards.
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div className="p-3.5 bg-white dark:bg-[#0A0D15] rounded-xl border border-gray-200 dark:border-[#1A2238]">
-                <div className="text-lg font-bold font-mono text-cyan-500">SVG</div>
-                <div className="text-[10px] text-gray-400 font-mono">LOSSLESS VECTOR</div>
+            <div className="mt-8 p-4 rounded-xl bg-gray-50 dark:bg-[#0E1015] border border-gray-100 dark:border-[#1D2028] flex items-center justify-around text-xs font-mono text-gray-600 dark:text-gray-300">
+              <span>[ RIBBONS ]</span>
+              <span>[ SEALS ]</span>
+              <span>[ CRESTS ]</span>
+              <span>[ FRAMES ]</span>
+            </div>
+          </div>
+
+          {/* Feature 4: Lossless 4K Multi-Format Exports */}
+          <div className="rounded-2xl border border-gray-200 dark:border-[#232630] bg-white dark:bg-[#14161C] p-7 flex flex-col justify-between shadow-sm">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-5">
+                <Download className="w-5 h-5" />
               </div>
-              <div className="p-3.5 bg-white dark:bg-[#0A0D15] rounded-xl border border-gray-200 dark:border-[#1A2238]">
-                <div className="text-lg font-bold font-mono text-orange-500">PNG 2X</div>
-                <div className="text-[10px] text-gray-400 font-mono">RETINA MASTER</div>
-              </div>
-              <div className="p-3.5 bg-white dark:bg-[#0A0D15] rounded-xl border border-gray-200 dark:border-[#1A2238]">
-                <div className="text-lg font-bold font-mono text-emerald-500">WEBP</div>
-                <div className="text-[10px] text-gray-400 font-mono">ULTRA LIGHT</div>
-              </div>
-              <div className="p-3.5 bg-white dark:bg-[#0A0D15] rounded-xl border border-gray-200 dark:border-[#1A2238]">
-                <div className="text-lg font-bold font-mono text-purple-500">API URL</div>
-                <div className="text-[10px] text-gray-400 font-mono">DYNAMIC CDN</div>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Lossless SVG &amp; Print-Ready High-Res Exports
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Export pure mathematical SVGs for razor-sharp rendering on any screen, high-DPI transparent PNGs for apparel print, or dynamic links for social cards.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center justify-center space-x-4 p-5 rounded-xl bg-gray-50 dark:bg-[#0E1015] border border-gray-100 dark:border-[#1D2028] text-xs font-semibold">
+              <span className="text-sky-600 dark:text-sky-400">VECTOR SVG</span>
+              <span className="text-gray-300 dark:text-gray-700">•</span>
+              <span className="text-emerald-600 dark:text-emerald-400">PNG RETINA</span>
+              <span className="text-gray-300 dark:text-gray-700">•</span>
+              <span className="text-amber-600 dark:text-amber-400">DYNAMIC OPENGRAPH</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. BLUEPRINT TEMPLATES CAROUSEL */}
-      <section id="templates" className="py-20 bg-gray-50 dark:bg-[#0A0D16] border-y border-gray-200 dark:border-[#181F33]">
-        <div className="max-w-7xl mx-auto px-4 mb-10 text-center">
-          <h3 className="text-xs font-mono uppercase tracking-widest text-cyan-500 font-bold">
-            CURATED BLUEPRINTS
-          </h3>
-          <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
-            Start with Studio-Grade Foundations
-          </p>
+      {/* 4. TEMPLATE BLUEPRINTS */}
+      <section className="py-20 border-t border-gray-200/80 dark:border-[#1E212A] bg-gray-50/50 dark:bg-[#0B0D12]">
+        <div className="max-w-7xl mx-auto px-4 text-center mb-12">
+          <span className="text-xs font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+            Ready-to-use blueprints
+          </span>
+          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+            Start from curated design layouts.
+          </h2>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
-            { title: 'YouTube Cover & Channel Art', size: '2560x1440', theme: 'from-orange-950 to-neutral-900', tag: 'YOUTUBE' },
-            { title: 'X / Twitter Banner', size: '1500x500', theme: 'from-blue-950 to-neutral-900', tag: 'TWITTER' },
-            { title: 'OpenGraph Social Card', size: '1200x630', theme: 'from-cyan-950 to-neutral-900', tag: 'OG CARD' },
-            { title: 'App Store / Product Hunt Card', size: '1280x800', theme: 'from-purple-950 to-neutral-900', tag: 'PRODUCT' }
-          ].map((card, idx) => (
+            { title: 'YouTube Header Artwork', dims: '2560 × 1440', bg: 'bg-[#18191E]', category: 'YOUTUBE' },
+            { title: 'X / Twitter Banner', dims: '1500 × 500', bg: 'bg-[#2A1810]', category: 'TWITTER' },
+            { title: 'OpenGraph Social Card', dims: '1200 × 630', bg: 'bg-[#101F18]', category: 'OG PREVIEW' },
+            { title: 'Vintage Circular Seal', dims: '1000 × 1000', bg: 'bg-[#201A24]', category: 'MERCH EMBLEM' },
+          ].map((item, idx) => (
             <div
               key={idx}
               onClick={onLaunchStudio}
-              className={`rounded-2xl bg-gradient-to-br ${card.theme} border border-gray-200 dark:border-[#20273D] p-6 flex flex-col justify-between h-52 cursor-pointer hover:scale-105 transition-all shadow-lg group`}
+              className={`rounded-2xl ${item.bg} text-white p-6 h-52 flex flex-col justify-between border border-gray-200 dark:border-[#2A2E3B] cursor-pointer hover:scale-[1.02] transition-transform shadow-sm group`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-black/60 border border-white/10 text-white font-bold">
-                  {card.tag}
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10 text-gray-200">
+                  {item.category}
                 </span>
-                <span className="text-[10px] font-mono text-gray-400">{card.size}</span>
+                <span className="text-[11px] text-gray-400">{item.dims}</span>
               </div>
               <div>
-                <h4 className="text-base font-bold text-white group-hover:text-cyan-400 transition-colors">
-                  {card.title}
+                <h4 className="text-base font-bold group-hover:text-sky-400 transition-colors">
+                  {item.title}
                 </h4>
                 <p className="text-xs text-gray-400 mt-1 flex items-center space-x-1">
-                  <span>Open in studio</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <span>Open in editor</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </p>
               </div>
             </div>
@@ -404,24 +380,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchStudio, onOpen
         </div>
       </section>
 
-      {/* 6. TRANSPARENT PRICING */}
-      <section id="pricing" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <h3 className="text-xs font-mono uppercase tracking-widest text-cyan-500 font-bold mb-2">
-            SIMPLE, TRANSPARENT PRICING
-          </h3>
-          <p className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-            Choose the Perfect Plan for Your Creative Workflow
+      {/* 5. PRICING ARCHITECTURE */}
+      <section className="py-20 border-t border-gray-200/80 dark:border-[#1E212A] max-w-5xl mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            Simple, transparent pricing.
+          </h2>
+          <p className="text-sm text-gray-500 mt-2">
+            Start for free, upgrade when you need commercial batch exports.
           </p>
 
-          {/* Monthly / Annual Toggle */}
-          <div className="mt-6 inline-flex items-center bg-gray-100 dark:bg-[#121626] p-1 rounded-xl border border-gray-200 dark:border-[#20273D]">
+          <div className="mt-5 inline-flex items-center bg-gray-100 dark:bg-[#15171F] p-1 rounded-xl border border-gray-200 dark:border-[#222530]">
             <button
               onClick={() => setAnnualBilling(false)}
               className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 !annualBilling
-                  ? 'bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#202430] text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500'
               }`}
             >
               Monthly
@@ -430,109 +405,103 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchStudio, onOpen
               onClick={() => setAnnualBilling(true)}
               className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
                 annualBilling
-                  ? 'bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-[#202430] text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500'
               }`}
             >
               <span>Annual</span>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-500 text-[10px] font-bold">SAVE 20%</span>
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">20% OFF</span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Starter */}
-          <div className="rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 flex flex-col justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Starter Free */}
+          <div className="rounded-2xl border border-gray-200 dark:border-[#222530] bg-white dark:bg-[#14161C] p-6 flex flex-col justify-between shadow-sm">
             <div>
-              <h4 className="text-lg font-bold text-gray-900 dark:text-white">Starter</h4>
-              <p className="text-xs text-gray-500 mt-1">For independent creators</p>
-              <div className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">$0</div>
-              <p className="text-xs text-gray-400">Free forever</p>
-              <ul className="mt-6 space-y-3 text-xs text-gray-600 dark:text-gray-300">
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Full Studio Canvas Access</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Lossless SVG &amp; PNG Exports</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>10 Saved Cloud Projects</span></li>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Starter</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Free for personal design</p>
+              <div className="mt-4 text-3xl font-extrabold text-gray-900 dark:text-white">$0</div>
+              <ul className="mt-5 space-y-2.5 text-xs text-gray-600 dark:text-gray-300">
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Full Studio Canvas Access</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Curved Text &amp; Lettering Engine</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Lossless SVG &amp; PNG Exports</span></li>
               </ul>
             </div>
-            <button onClick={onLaunchStudio} className="mt-8 w-full py-3 rounded-xl bg-gray-200 dark:bg-[#181D2E] text-xs font-semibold text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-[#20273E] transition-colors">
-              Start Creating Free
+            <button onClick={onLaunchStudio} className="mt-8 w-full py-2.5 rounded-xl bg-gray-100 dark:bg-[#1C1F28] text-xs font-semibold text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#232733] transition-colors">
+              Start Free
             </button>
           </div>
 
           {/* Pro Creator */}
-          <div className="rounded-3xl bg-gradient-to-b from-white to-gray-50 dark:from-[#131728] dark:to-[#0E121E] border-2 border-cyan-500 p-8 relative flex flex-col justify-between shadow-2xl shadow-cyan-500/10">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-cyan-500 text-white font-mono text-[10px] font-bold tracking-wider">
+          <div className="rounded-2xl border-2 border-sky-500 bg-white dark:bg-[#14161C] p-6 flex flex-col justify-between shadow-lg relative">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-sky-500 text-white text-[10px] font-bold uppercase tracking-wider">
               MOST POPULAR
             </span>
             <div>
-              <h4 className="text-lg font-bold text-gray-900 dark:text-white">Pro Creator</h4>
-              <p className="text-xs text-gray-500 mt-1">For professional designers &amp; builders</p>
-              <div className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Pro Creator</h3>
+              <p className="text-xs text-gray-500 mt-0.5">For professional creators &amp; designers</p>
+              <div className="mt-4 text-3xl font-extrabold text-gray-900 dark:text-white">
                 {annualBilling ? '$12' : '$15'}
                 <span className="text-xs font-normal text-gray-400"> / month</span>
               </div>
-              <p className="text-xs text-gray-400">{annualBilling ? 'Billed annually ($144)' : 'Billed monthly'}</p>
-              <ul className="mt-6 space-y-3 text-xs text-gray-700 dark:text-gray-200">
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Unlimited 4K Lossless Exports</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Unlimited Cloud Saved Projects</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Custom Brand Kit &amp; Palette Manager</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Dynamic OpenGraph Edge API</span></li>
+              <ul className="mt-5 space-y-2.5 text-xs text-gray-700 dark:text-gray-200">
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Unlimited 4K Retina Vector Exports</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Custom Brand Kits &amp; Palettes</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Dynamic OpenGraph Link Generation</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Commercial Use License</span></li>
               </ul>
             </div>
-            <button onClick={() => onOpenAuth('signup')} className="mt-8 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-xs font-bold text-white shadow-lg shadow-cyan-500/25 hover:opacity-95 transition-all">
-              Upgrade to Pro
+            <button onClick={() => onOpenAuth('signup')} className="mt-8 w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-xs font-bold text-white transition-colors">
+              Get Started
             </button>
           </div>
 
           {/* Team Studio */}
-          <div className="rounded-3xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] p-8 flex flex-col justify-between">
+          <div className="rounded-2xl border border-gray-200 dark:border-[#222530] bg-white dark:bg-[#14161C] p-6 flex flex-col justify-between shadow-sm">
             <div>
-              <h4 className="text-lg font-bold text-gray-900 dark:text-white">Team Studio</h4>
-              <p className="text-xs text-gray-500 mt-1">For creative agencies &amp; teams</p>
-              <div className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">Team Studio</h3>
+              <p className="text-xs text-gray-500 mt-0.5">For agencies and creative teams</p>
+              <div className="mt-4 text-3xl font-extrabold text-gray-900 dark:text-white">
                 {annualBilling ? '$39' : '$49'}
                 <span className="text-xs font-normal text-gray-400"> / month</span>
               </div>
-              <p className="text-xs text-gray-400">Collaborative workspace</p>
-              <ul className="mt-6 space-y-3 text-xs text-gray-600 dark:text-gray-300">
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Up to 10 Team Members</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Shared Brand Assets &amp; Palettes</span></li>
-                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-cyan-500" /><span>Priority Edge CDN Rendering</span></li>
+              <ul className="mt-5 space-y-2.5 text-xs text-gray-600 dark:text-gray-300">
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Up to 10 Team Seats</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Shared Brand Assets &amp; Typography</span></li>
+                <li className="flex items-center space-x-2"><Check className="w-4 h-4 text-sky-500" /><span>Priority High-Speed Rendering</span></li>
               </ul>
             </div>
-            <button onClick={() => onOpenAuth('signup')} className="mt-8 w-full py-3 rounded-xl bg-gray-200 dark:bg-[#181D2E] text-xs font-semibold text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-[#20273E] transition-colors">
-              Get Started
+            <button onClick={() => onOpenAuth('signup')} className="mt-8 w-full py-2.5 rounded-xl bg-gray-100 dark:bg-[#1C1F28] text-xs font-semibold text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#232733] transition-colors">
+              Contact Team
             </button>
           </div>
         </div>
       </section>
 
-      {/* 7. FREQUENTLY ASKED QUESTIONS */}
-      <section id="faq" className="py-20 max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h3 className="text-xs font-mono uppercase tracking-widest text-cyan-500 font-bold mb-2">
-            HELP &amp; FAQ
-          </h3>
-          <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            Common Questions About SnapBrand
-          </p>
+      {/* 6. FAQ ACCORDION */}
+      <section className="py-16 border-t border-gray-200/80 dark:border-[#1E212A] max-w-3xl mx-auto px-4">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Frequently Asked Questions
+          </h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-2xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1E2538] overflow-hidden transition-all"
+              className="rounded-xl border border-gray-200 dark:border-[#222530] bg-white dark:bg-[#14161C] overflow-hidden"
             >
               <button
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full py-4 px-6 text-left flex items-center justify-between font-semibold text-gray-900 dark:text-white hover:text-cyan-500 transition-colors"
+                className="w-full py-3.5 px-5 text-left flex items-center justify-between font-medium text-sm text-gray-900 dark:text-white"
               >
                 <span>{faq.q}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openFaq === idx ? 'rotate-180 text-cyan-500' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openFaq === idx ? 'rotate-180' : ''}`} />
               </button>
               {openFaq === idx && (
-                <div className="px-6 pb-5 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-[#181F33] pt-3.5">
+                <div className="px-5 pb-4 text-xs text-gray-500 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-[#1C1F28] pt-3">
                   {faq.a}
                 </div>
               )}
@@ -541,75 +510,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLaunchStudio, onOpen
         </div>
       </section>
 
-      {/* 8. BOTTOM STUDIO CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="rounded-3xl bg-gradient-to-r from-cyan-900/40 via-blue-900/30 to-orange-900/40 border border-cyan-500/30 p-12 text-center relative overflow-hidden shadow-2xl">
-          <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Ready to create iconic brand assets?
-            </h2>
-            <p className="text-gray-300 text-base sm:text-lg">
-              Start building high-converting banners, typography artwork, and dynamic previews today.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={onLaunchStudio}
-                className="px-9 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-white font-bold text-base shadow-xl shadow-cyan-500/30 hover:scale-105 transition-all"
-              >
-                Launch Studio Free Now &rarr;
-              </button>
-            </div>
+      {/* 7. BOTTOM CTA */}
+      <section className="py-16 border-t border-gray-200/80 dark:border-[#1E212A] bg-gray-900 dark:bg-[#0A0C10] text-white">
+        <div className="max-w-4xl mx-auto px-4 text-center space-y-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Ready to design your next iconic asset?
+          </h2>
+          <p className="text-gray-400 text-sm max-w-xl mx-auto">
+            Join thousands of creators crafting vectors and brand graphics in a fast, lightweight browser studio.
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={onLaunchStudio}
+              className="px-8 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-sm shadow-md transition-all"
+            >
+              Launch Studio Free &rarr;
+            </button>
           </div>
         </div>
       </section>
 
-      {/* 9. MEGA FOOTER */}
-      <footer className="border-t border-gray-200 dark:border-[#181F33] bg-gray-50 dark:bg-[#07080C] py-14 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8">
-          <div className="col-span-2 space-y-4">
-            <BrandLogo size="md" />
-            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
-              SnapBrand is the next-generation creative studio for vector typography, generative mesh backgrounds, and instant dynamic social previews.
-            </p>
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Studio Engine Operational</span>
-            </div>
+      {/* 8. FOOTER */}
+      <footer className="border-t border-gray-200 dark:border-[#1E212A] bg-white dark:bg-[#0E1015] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+          <div className="flex items-center space-x-2">
+            <BrandLogo size="sm" showTagline={false} />
+            <span className="text-gray-300 dark:text-gray-700">|</span>
+            <span>Creative Design Studio for Modern Brands</span>
           </div>
-
           <div>
-            <h4 className="text-xs font-mono font-bold text-gray-900 dark:text-gray-200 uppercase mb-4">Product</h4>
-            <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <li><button onClick={onLaunchStudio} className="hover:text-cyan-500">Studio Canvas</button></li>
-              <li><button onClick={onLaunchStudio} className="hover:text-cyan-500">Curved Typography</button></li>
-              <li><button onClick={onLaunchStudio} className="hover:text-cyan-500">Mesh Gradients</button></li>
-              <li><button onClick={onLaunchStudio} className="hover:text-cyan-500">Dynamic Edge API</button></li>
-            </ul>
+            © 2026 SnapBrand. All rights reserved.
           </div>
-
-          <div>
-            <h4 className="text-xs font-mono font-bold text-gray-900 dark:text-gray-200 uppercase mb-4">Templates</h4>
-            <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <li><a href="#templates" className="hover:text-cyan-500">YouTube Covers</a></li>
-              <li><a href="#templates" className="hover:text-cyan-500">Twitter Headers</a></li>
-              <li><a href="#templates" className="hover:text-cyan-500">OpenGraph Cards</a></li>
-              <li><a href="#templates" className="hover:text-cyan-500">Brand Badges</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-mono font-bold text-gray-900 dark:text-gray-200 uppercase mb-4">Account</h4>
-            <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-              <li><button onClick={() => onOpenAuth('signup')} className="hover:text-cyan-500">Sign Up</button></li>
-              <li><button onClick={() => onOpenAuth('signin')} className="hover:text-cyan-500">Sign In</button></li>
-              <li><a href="#pricing" className="hover:text-cyan-500">Plans &amp; Pricing</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-gray-200 dark:border-[#151B2C] flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
-          <p>© 2026 snapbrand.io. All rights reserved.</p>
-          <p className="mt-2 sm:mt-0 font-mono">Crafted for modern creators worldwide.</p>
         </div>
       </footer>
     </div>
