@@ -1,32 +1,35 @@
-import React, { useState } from 'react';
-import { Palette, Check, Type, Sparkles } from 'lucide-react';
-import { BrandKit } from '../../types';
+import React, { useState } from "react";
+import { Palette, Check, Type, Sparkles } from "lucide-react";
+import { BrandKit } from "../../types";
 
 export const BrandKitView: React.FC = () => {
   const [brandKit, setBrandKit] = useState<BrandKit>({
-    companyName: 'SnapBrand Studio',
-    tagline: 'Precision Graphics for Modern Creators',
+    companyName: "SnapBrand Studio",
+    tagline: "Precision Graphics for Modern Creators",
     palette: {
-      primary: '#00F2FE',
-      secondary: '#3B82F6',
-      accent: '#FF7A18',
-      surface: '#08090E',
-      panel: '#0E121E'
+      primary: "#00F2FE",
+      secondary: "#3B82F6",
+      accent: "#FF7A18",
+      surface: "#08090E",
+      panel: "#0E121E",
     },
     typography: {
-      headingFont: 'Plus Jakarta Sans',
-      bodyFont: 'Inter',
-      codeFont: 'JetBrains Mono'
+      headingFont: "Plus Jakarta Sans",
+      bodyFont: "Inter",
+      codeFont: "JetBrains Mono",
     },
-    badges: ['Vector Master', '4K Retina', 'Curved Type', 'Mesh Shader']
+    badges: ["Vector Master", "4K Retina", "Curved Type", "Mesh Shader"],
   });
 
   const [saved, setSaved] = useState(false);
 
-  const handleColorChange = (key: keyof typeof brandKit.palette, value: string) => {
+  const handleColorChange = (
+    key: keyof typeof brandKit.palette,
+    value: string,
+  ) => {
     setBrandKit({
       ...brandKit,
-      palette: { ...brandKit.palette, [key]: value }
+      palette: { ...brandKit.palette, [key]: value },
     });
   };
 
@@ -44,7 +47,8 @@ export const BrandKitView: React.FC = () => {
             <span>Brand Kit Engine</span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Define corporate palettes, typography scales, and approved tags to auto-apply across your artwork.
+            Define corporate palettes, typography scales, and approved tags to
+            auto-apply across your artwork.
           </p>
         </div>
         <button
@@ -52,7 +56,7 @@ export const BrandKitView: React.FC = () => {
           className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all flex items-center space-x-2"
         >
           {saved ? <Check className="w-4 h-4" /> : null}
-          <span>{saved ? 'Saved to Cloud!' : 'Save Brand Kit'}</span>
+          <span>{saved ? "Saved to Cloud!" : "Save Brand Kit"}</span>
         </button>
       </div>
 
@@ -60,9 +64,13 @@ export const BrandKitView: React.FC = () => {
       <div className="rounded-2xl bg-gray-50 dark:bg-[#0E121E] border border-gray-200 dark:border-[#1C2337] p-6 space-y-6">
         <h3 className="text-sm font-bold">Standardized Hex Palette</h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {(Object.keys(brandKit.palette) as Array<keyof typeof brandKit.palette>).map((key) => (
+          {(
+            Object.keys(brandKit.palette) as Array<
+              keyof typeof brandKit.palette
+            >
+          ).map((key) => (
             <div key={key} className="space-y-2">
-              <div 
+              <div
                 className="h-20 rounded-xl border border-black/10 dark:border-white/10 shadow-inner flex items-end p-2"
                 style={{ backgroundColor: brandKit.palette[key] }}
               >
@@ -71,7 +79,9 @@ export const BrandKitView: React.FC = () => {
                 </span>
               </div>
               <div>
-                <p className="text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{key}</p>
+                <p className="text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">
+                  {key}
+                </p>
                 <input
                   type="text"
                   value={brandKit.palette[key]}
@@ -93,15 +103,21 @@ export const BrandKitView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-xl bg-white dark:bg-[#0A0D15] border border-gray-200 dark:border-[#1A2238]">
             <p className="text-xs text-gray-500">Headings Font</p>
-            <p className="text-lg font-black mt-1 text-gray-900 dark:text-white">{brandKit.typography.headingFont}</p>
+            <p className="text-lg font-black mt-1 text-gray-900 dark:text-white">
+              {brandKit.typography.headingFont}
+            </p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-[#0A0D15] border border-gray-200 dark:border-[#1A2238]">
             <p className="text-xs text-gray-500">Body Typography</p>
-            <p className="text-lg font-medium mt-1 text-gray-900 dark:text-white">{brandKit.typography.bodyFont}</p>
+            <p className="text-lg font-medium mt-1 text-gray-900 dark:text-white">
+              {brandKit.typography.bodyFont}
+            </p>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-[#0A0D15] border border-gray-200 dark:border-[#1A2238]">
             <p className="text-xs text-gray-500">Monospace Readouts</p>
-            <p className="text-lg font-mono text-cyan-500 mt-1">{brandKit.typography.codeFont}</p>
+            <p className="text-lg font-mono text-cyan-500 mt-1">
+              {brandKit.typography.codeFont}
+            </p>
           </div>
         </div>
       </div>
@@ -111,7 +127,10 @@ export const BrandKitView: React.FC = () => {
         <h3 className="text-sm font-bold">Approved Brand Badges &amp; Tags</h3>
         <div className="flex flex-wrap gap-2">
           {brandKit.badges.map((b) => (
-            <span key={b} className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] text-xs font-mono font-medium text-gray-700 dark:text-gray-300">
+            <span
+              key={b}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#141826] border border-gray-200 dark:border-[#222A40] text-xs font-mono font-medium text-gray-700 dark:text-gray-300"
+            >
               ● {b}
             </span>
           ))}

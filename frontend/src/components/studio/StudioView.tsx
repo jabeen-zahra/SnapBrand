@@ -1,88 +1,111 @@
-import React, { useState } from 'react';
-import { 
-  Download, 
-  Type, 
-  Palette, 
-  Tag, 
-  Code, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Check, 
-  Copy, 
+import React, { useState } from "react";
+import {
+  Download,
+  Type,
+  Palette,
+  Tag,
+  Code,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Check,
+  Copy,
   Save,
-  ArrowLeft
-} from 'lucide-react';
-import { useAuth } from '../../lib/AuthContext';
-import { BrandLogo } from '../common/BrandLogo';
+  ArrowLeft,
+} from "lucide-react";
+import { useAuth } from "../../lib/AuthContext";
+import { BrandLogo } from "../common/BrandLogo";
 
 interface StudioViewProps {
   onBackToDashboard?: () => void;
 }
 
-export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => {
+export const StudioView: React.FC<StudioViewProps> = ({
+  onBackToDashboard,
+}) => {
   const { token } = useAuth();
 
-  const [projectName, setProjectName] = useState('Vintage Heritage Crest');
-  const [headline, setHeadline] = useState('HERITAGE CRAFT');
-  const [subtitle, setSubtitle] = useState('Authentic Handcrafted Vector Assets • Est. 2026');
-  const [badgeText, setBadgeText] = useState('ORIGINAL BRAND');
-  const [paletteMood, setPaletteMood] = useState<'graphite' | 'terracotta' | 'forest' | 'cream'>('graphite');
-  const [dimensions, setDimensions] = useState<{ width: number; height: number; label: string }>({
+  const [projectName, setProjectName] = useState("Vintage Heritage Crest");
+  const [headline, setHeadline] = useState("HERITAGE CRAFT");
+  const [subtitle, setSubtitle] = useState(
+    "Authentic Handcrafted Vector Assets • Est. 2026",
+  );
+  const [badgeText, setBadgeText] = useState("ORIGINAL BRAND");
+  const [paletteMood, setPaletteMood] = useState<
+    "graphite" | "terracotta" | "forest" | "cream"
+  >("graphite");
+  const [dimensions, setDimensions] = useState<{
+    width: number;
+    height: number;
+    label: string;
+  }>({
     width: 1200,
     height: 630,
-    label: 'OpenGraph Card (1200x630)'
+    label: "OpenGraph Card (1200x630)",
   });
   const [zoom, setZoom] = useState(100);
-  const [activeTab, setActiveTab] = useState<'palette' | 'typography' | 'tags' | 'export'>('palette');
+  const [activeTab, setActiveTab] = useState<
+    "palette" | "typography" | "tags" | "export"
+  >("palette");
   const [copiedCode, setCopiedCode] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>(['HERITAGE', 'VECTOR SVG', 'HANDCRAFTED']);
+  const [selectedTags, setSelectedTags] = useState<string[]>([
+    "HERITAGE",
+    "VECTOR SVG",
+    "HANDCRAFTED",
+  ]);
 
   // Tactile, non-neon designer moods
   const palettes = {
     graphite: {
-      bg: 'bg-[#18191E] text-white',
-      border: 'border-[#2D303B]',
-      accent: '#38BDF8',
-      tagColor: 'bg-white/10 text-gray-200'
+      bg: "bg-[#18191E] text-white",
+      border: "border-[#2D303B]",
+      accent: "#38BDF8",
+      tagColor: "bg-white/10 text-gray-200",
     },
     terracotta: {
-      bg: 'bg-[#2A1810] text-[#FED7AA]',
-      border: 'border-[#4A2D1F]',
-      accent: '#FB923C',
-      tagColor: 'bg-amber-500/20 text-amber-200'
+      bg: "bg-[#2A1810] text-[#FED7AA]",
+      border: "border-[#4A2D1F]",
+      accent: "#FB923C",
+      tagColor: "bg-amber-500/20 text-amber-200",
     },
     forest: {
-      bg: 'bg-[#101F18] text-[#BBF7D0]',
-      border: 'border-[#1E3B2E]',
-      accent: '#34D399',
-      tagColor: 'bg-emerald-500/20 text-emerald-200'
+      bg: "bg-[#101F18] text-[#BBF7D0]",
+      border: "border-[#1E3B2E]",
+      accent: "#34D399",
+      tagColor: "bg-emerald-500/20 text-emerald-200",
     },
     cream: {
-      bg: 'bg-[#F4EFE6] text-[#2D2823]',
-      border: 'border-[#DCD3C4]',
-      accent: '#C2410C',
-      tagColor: 'bg-black/10 text-gray-800'
-    }
+      bg: "bg-[#F4EFE6] text-[#2D2823]",
+      border: "border-[#DCD3C4]",
+      accent: "#C2410C",
+      tagColor: "bg-black/10 text-gray-800",
+    },
   };
 
   const currentMood = palettes[paletteMood];
 
   const presetSizes = [
-    { width: 1200, height: 630, label: 'OpenGraph Card (1200x630)' },
-    { width: 1280, height: 640, label: 'GitHub Header (1280x640)' },
-    { width: 1500, height: 500, label: 'Twitter/X Cover (1500x500)' },
-    { width: 1080, height: 1080, label: 'Square Post (1080x1080)' }
+    { width: 1200, height: 630, label: "OpenGraph Card (1200x630)" },
+    { width: 1280, height: 640, label: "GitHub Header (1280x640)" },
+    { width: 1500, height: 500, label: "Twitter/X Cover (1500x500)" },
+    { width: 1080, height: 1080, label: "Square Post (1080x1080)" },
   ];
 
   const availableTags = [
-    'HERITAGE', 'VECTOR SVG', 'HANDCRAFTED', 'EDITORIAL', 'SWISS TYPE', 'MINIMALIST', 'VINTAGE BADGE', '4K RETINA'
+    "HERITAGE",
+    "VECTOR SVG",
+    "HANDCRAFTED",
+    "EDITORIAL",
+    "SWISS TYPE",
+    "MINIMALIST",
+    "VINTAGE BADGE",
+    "4K RETINA",
   ];
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
+      setSelectedTags(selectedTags.filter((t) => t !== tag));
     } else {
       setSelectedTags([...selectedTags, tag]);
     }
@@ -109,11 +132,11 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
 
   const handleDownloadSvg = () => {
     const markup = generateSvgMarkup();
-    const blob = new Blob([markup], { type: 'image/svg+xml;charset=utf-8' });
+    const blob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `${projectName.toLowerCase().replace(/\s+/g, '-')}.svg`;
+    link.download = `${projectName.toLowerCase().replace(/\s+/g, "-")}.svg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -122,16 +145,16 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
 
   const handleSaveToCloud = async () => {
     if (!token) {
-      alert('Please sign in to save your artwork to your personal library.');
+      alert("Please sign in to save your artwork to your personal library.");
       return;
     }
 
     try {
-      const res = await fetch('/api/v1/projects', {
-        method: 'POST',
+      const res = await fetch("/api/v1/projects", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: projectName,
@@ -140,8 +163,8 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
           theme: paletteMood,
           headline,
           subtitle,
-          badgeText
-        })
+          badgeText,
+        }),
       });
 
       if (res.ok) {
@@ -149,14 +172,16 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
         setTimeout(() => setSavedSuccess(false), 2000);
       }
     } catch (err) {
-      console.error('Failed to save project:', err);
+      console.error("Failed to save project:", err);
     }
   };
 
   const dynamicApiUrl = `http://localhost:5000/api/v1/render/og?title=${encodeURIComponent(headline)}&subtitle=${encodeURIComponent(subtitle)}&theme=${paletteMood}&badge=${encodeURIComponent(badgeText)}`;
 
   const copyApiSnippet = () => {
-    navigator.clipboard.writeText(`<meta property="og:image" content="${dynamicApiUrl}" />`);
+    navigator.clipboard.writeText(
+      `<meta property="og:image" content="${dynamicApiUrl}" />`,
+    );
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
@@ -191,27 +216,43 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
           <select
             value={dimensions.label}
             onChange={(e) => {
-              const selected = presetSizes.find(s => s.label === e.target.value);
+              const selected = presetSizes.find(
+                (s) => s.label === e.target.value,
+              );
               if (selected) setDimensions(selected);
             }}
             className="bg-gray-100 dark:bg-[#181B22] border border-gray-200 dark:border-[#262A35] text-xs text-gray-700 dark:text-gray-300 rounded-lg px-2.5 py-1 focus:outline-none"
           >
-            {presetSizes.map(s => (
-              <option key={s.label} value={s.label}>{s.label}</option>
+            {presetSizes.map((s) => (
+              <option key={s.label} value={s.label}>
+                {s.label}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Center Viewport Zoom */}
         <div className="hidden sm:flex items-center space-x-2">
-          <button onClick={() => setZoom(Math.max(50, zoom - 10))} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white">
+          <button
+            onClick={() => setZoom(Math.max(50, zoom - 10))}
+            className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <span className="text-xs font-mono text-gray-400 w-12 text-center">{zoom}%</span>
-          <button onClick={() => setZoom(Math.min(150, zoom + 10))} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white">
+          <span className="text-xs font-mono text-gray-400 w-12 text-center">
+            {zoom}%
+          </span>
+          <button
+            onClick={() => setZoom(Math.min(150, zoom + 10))}
+            className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
             <ZoomIn className="w-4 h-4" />
           </button>
-          <button onClick={() => setZoom(100)} className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white" title="Reset Zoom">
+          <button
+            onClick={() => setZoom(100)}
+            className="p-1.5 rounded text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            title="Reset Zoom"
+          >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -222,16 +263,24 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
             onClick={handleSaveToCloud}
             className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#262A35] text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1B1E26] flex items-center space-x-1.5 transition-colors"
           >
-            {savedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Save className="w-3.5 h-3.5" />}
-            <span>{savedSuccess ? 'Saved' : 'Save'}</span>
+            {savedSuccess ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            <span>{savedSuccess ? "Saved" : "Save"}</span>
           </button>
 
           <button
             onClick={copyApiSnippet}
             className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-[#262A35] text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1B1E26] flex items-center space-x-1.5 transition-colors"
           >
-            {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedCode ? 'Copied' : 'Embed URL'}</span>
+            {copiedCode ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
+            <span>{copiedCode ? "Copied" : "Embed URL"}</span>
           </button>
 
           <button
@@ -250,11 +299,11 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
         <aside className="w-72 bg-white dark:bg-[#12141A] border-r border-gray-200 dark:border-[#1E212A] flex flex-col z-10">
           <div className="flex border-b border-gray-200 dark:border-[#1E212A] bg-gray-50 dark:bg-[#0E1015]">
             {[
-              { id: 'palette', label: 'Color Mood', icon: Palette },
-              { id: 'typography', label: 'Typography', icon: Type },
-              { id: 'tags', label: 'Tags', icon: Tag },
-              { id: 'export', label: 'Embed', icon: Code }
-            ].map(tab => {
+              { id: "palette", label: "Color Mood", icon: Palette },
+              { id: "typography", label: "Typography", icon: Type },
+              { id: "tags", label: "Tags", icon: Tag },
+              { id: "export", label: "Embed", icon: Code },
+            ].map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
@@ -262,8 +311,8 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex-1 py-3 text-xs font-semibold flex flex-col items-center space-y-1 transition-colors ${
                     activeTab === tab.id
-                      ? 'text-sky-600 dark:text-sky-400 border-b-2 border-sky-500 bg-white dark:bg-[#15171F]'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      ? "text-sky-600 dark:text-sky-400 border-b-2 border-sky-500 bg-white dark:bg-[#15171F]"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -274,32 +323,41 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
           </div>
 
           <div className="p-4 space-y-5 flex-1 overflow-y-auto">
-            {activeTab === 'palette' && (
+            {activeTab === "palette" && (
               <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tactile Palettes</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Tactile Palettes
+                </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(palettes) as Array<keyof typeof palettes>).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPaletteMood(p)}
-                      className={`p-3 rounded-xl border text-left text-xs capitalize transition-all ${
-                        paletteMood === p
-                          ? 'border-sky-500 bg-sky-50 dark:bg-[#181C26] text-gray-900 dark:text-white font-bold ring-1 ring-sky-500'
-                          : 'border-gray-200 dark:border-[#222530] bg-white dark:bg-[#15171E] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      <div className="w-4 h-4 rounded-full mb-2" style={{ backgroundColor: palettes[p].accent }} />
-                      <span>{p}</span>
-                    </button>
-                  ))}
+                  {(Object.keys(palettes) as Array<keyof typeof palettes>).map(
+                    (p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPaletteMood(p)}
+                        className={`p-3 rounded-xl border text-left text-xs capitalize transition-all ${
+                          paletteMood === p
+                            ? "border-sky-500 bg-sky-50 dark:bg-[#181C26] text-gray-900 dark:text-white font-bold ring-1 ring-sky-500"
+                            : "border-gray-200 dark:border-[#222530] bg-white dark:bg-[#15171E] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full mb-2"
+                          style={{ backgroundColor: palettes[p].accent }}
+                        />
+                        <span>{p}</span>
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
             )}
 
-            {activeTab === 'typography' && (
+            {activeTab === "typography" && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Headline Text</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Headline Text
+                  </label>
                   <input
                     type="text"
                     value={headline}
@@ -308,7 +366,9 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle / Est.</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Subtitle / Est.
+                  </label>
                   <textarea
                     rows={3}
                     value={subtitle}
@@ -317,7 +377,9 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Brand Badge</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Brand Badge
+                  </label>
                   <input
                     type="text"
                     value={badgeText}
@@ -328,18 +390,20 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
               </div>
             )}
 
-            {activeTab === 'tags' && (
+            {activeTab === "tags" && (
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stamp Decorative Tags</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Stamp Decorative Tags
+                </h4>
                 <div className="flex flex-wrap gap-1.5">
-                  {availableTags.map(item => (
+                  {availableTags.map((item) => (
                     <button
                       key={item}
                       onClick={() => toggleTag(item)}
                       className={`px-2.5 py-1 rounded-md text-xs font-mono transition-all ${
                         selectedTags.includes(item)
-                          ? 'bg-sky-500/10 border border-sky-500/40 text-sky-600 dark:text-sky-400 font-bold'
-                          : 'bg-gray-100 dark:bg-[#181B22] border border-gray-200 dark:border-[#242733] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                          ? "bg-sky-500/10 border border-sky-500/40 text-sky-600 dark:text-sky-400 font-bold"
+                          : "bg-gray-100 dark:bg-[#181B22] border border-gray-200 dark:border-[#242733] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
                       {item}
@@ -349,11 +413,14 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
               </div>
             )}
 
-            {activeTab === 'export' && (
+            {activeTab === "export" && (
               <div className="space-y-4">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Dynamic OpenGraph URL</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Dynamic OpenGraph URL
+                </h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Embed this URL directly into your HTML headers or React OpenGraph cards:
+                  Embed this URL directly into your HTML headers or React
+                  OpenGraph cards:
                 </p>
                 <div className="bg-gray-100 dark:bg-[#0E1015] border border-gray-200 dark:border-[#222530] rounded-lg p-2.5 font-mono text-[11px] text-gray-700 dark:text-gray-300 break-all select-all">
                   {dynamicApiUrl}
@@ -377,13 +444,15 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
               width: `${dimensions.width * 0.65}px`,
               height: `${dimensions.height * 0.65}px`,
               transform: `scale(${zoom / 100})`,
-              transformOrigin: 'center center'
+              transformOrigin: "center center",
             }}
             className={`rounded-xl ${currentMood.bg} border ${currentMood.border} p-8 sm:p-12 relative shadow-lg flex flex-col justify-between transition-all duration-300 overflow-hidden shrink-0`}
           >
             {/* Top Badge */}
             <div className="relative z-10">
-              <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold tracking-wider ${currentMood.tagColor}`}>
+              <span
+                className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold tracking-wider ${currentMood.tagColor}`}
+              >
                 ● {badgeText.toUpperCase()}
               </span>
             </div>
@@ -401,8 +470,11 @@ export const StudioView: React.FC<StudioViewProps> = ({ onBackToDashboard }) => 
             {/* Bottom Meta & Tags */}
             <div className="relative z-10 pt-4 border-t border-current border-opacity-15 flex items-center justify-between text-xs opacity-75 font-mono">
               <div className="flex items-center space-x-1.5">
-                {selectedTags.map(tag => (
-                  <span key={tag} className="px-2 py-0.5 rounded bg-black/30 text-gray-200 text-[10px]">
+                {selectedTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-0.5 rounded bg-black/30 text-gray-200 text-[10px]"
+                  >
                     {tag}
                   </span>
                 ))}

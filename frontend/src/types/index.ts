@@ -1,4 +1,5 @@
-export type ActiveView = 'dashboard' | 'studio' | 'projects' | 'templates' | 'brandkit' | 'settings';
+export type ActiveView =
+  "dashboard" | "studio" | "projects" | "templates" | "brandkit" | "settings";
 
 export interface User {
   id: string;
@@ -14,7 +15,7 @@ export interface Project {
   name: string;
   width: number;
   height: number;
-  theme: 'cyber' | 'sunset' | 'obsidian' | 'emerald' | 'minimal';
+  theme: "cyber" | "sunset" | "obsidian" | "emerald" | "minimal";
   headline: string;
   subtitle: string;
   badge: string;
@@ -25,10 +26,10 @@ export interface Project {
 export interface Template {
   id: string;
   title: string;
-  category: 'github' | 'twitter' | 'opengraph' | 'producthunt' | 'badges';
+  category: "github" | "twitter" | "opengraph" | "producthunt" | "badges";
   width: number;
   height: number;
-  theme: 'cyber' | 'sunset' | 'obsidian' | 'emerald' | 'minimal';
+  theme: "cyber" | "sunset" | "obsidian" | "emerald" | "minimal";
   headline: string;
   subtitle: string;
   badge: string;

@@ -1,23 +1,30 @@
-import React, { useState } from 'react';
-import { X, ArrowRight, Sparkles, Check, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../../lib/AuthContext';
-import { BrandLogo } from './BrandLogo';
+import React, { useState } from "react";
+import {
+  X,
+  ArrowRight,
+  Sparkles,
+  Check,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { useAuth } from "../../lib/AuthContext";
+import { BrandLogo } from "./BrandLogo";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'signin' | 'signup';
+  initialMode?: "signin" | "signup";
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  initialMode = 'signup' 
+export const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
+  initialMode = "signup",
 }) => {
-  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,9 +38,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(true);
 
     try {
-      if (mode === 'signup') {
+      if (mode === "signup") {
         if (!fullName.trim()) {
-          setError('Please provide your full name.');
+          setError("Please provide your full name.");
           setLoading(false);
           return;
         }
@@ -41,18 +48,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (res.success) {
           onClose();
         } else {
-          setError(res.error || 'Failed to create account.');
+          setError(res.error || "Failed to create account.");
         }
       } else {
         const res = await signin(email, password);
         if (res.success) {
           onClose();
         } else {
-          setError(res.error || 'Invalid credentials.');
+          setError(res.error || "Invalid credentials.");
         }
       }
     } catch {
-      setError('An unexpected error occurred. Please try again.');
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -61,12 +68,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleQuickDemoLogin = async () => {
     setError(null);
     setLoading(true);
-    const res = await signin('creator@snapbrand.io', 'password123');
+    const res = await signin("creator@snapbrand.io", "password123");
     setLoading(false);
     if (res.success) {
       onClose();
     } else {
-      setError(res.error || 'Demo login failed.');
+      setError(res.error || "Demo login failed.");
     }
   };
 
@@ -87,34 +94,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <BrandLogo size="lg" />
           </div>
           <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            {mode === 'signup' ? 'Create Your Studio Account' : 'Welcome Back to Studio'}
+            {mode === "signup"
+              ? "Create Your Studio Account"
+              : "Welcome Back to Studio"}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {mode === 'signup' 
-              ? 'Join 50,000+ creators and designers building high-impact brand assets.'
-              : 'Sign in to access your saved artworks, palettes, and vector exports.'}
+            {mode === "signup"
+              ? "Join 50,000+ creators and designers building high-impact brand assets."
+              : "Sign in to access your saved artworks, palettes, and vector exports."}
           </p>
 
           {/* Tab Switcher */}
           <div className="mt-6 flex bg-gray-100 dark:bg-[#151928] p-1 rounded-xl">
             <button
               type="button"
-              onClick={() => { setMode('signup'); setError(null); }}
+              onClick={() => {
+                setMode("signup");
+                setError(null);
+              }}
               className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === 'signup'
-                  ? 'bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                mode === "signup"
+                  ? "bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Sign Up
             </button>
             <button
               type="button"
-              onClick={() => { setMode('signin'); setError(null); }}
+              onClick={() => {
+                setMode("signin");
+                setError(null);
+              }}
               className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                mode === 'signin'
-                  ? 'bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                mode === "signin"
+                  ? "bg-white dark:bg-[#20273D] text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               Sign In
@@ -131,7 +146,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {mode === 'signup' && (
+          {mode === "signup" && (
             <div>
               <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Full Name
@@ -180,7 +195,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             disabled={loading}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-orange-500 text-white font-semibold text-xs shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all flex items-center justify-center space-x-2 disabled:opacity-60"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>{mode === 'signup' ? 'Create Studio Account' : 'Sign In to Studio'}</span>}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span>
+                {mode === "signup"
+                  ? "Create Studio Account"
+                  : "Sign In to Studio"}
+              </span>
+            )}
             {!loading && <ArrowRight className="w-4 h-4" />}
           </button>
 

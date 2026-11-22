@@ -17,6 +17,11 @@ coverage/
 .env.local
 *.env
 
+# Local Database & persistent state
+backend/data/*.json
+backend/data/*.db
+data/
+
 # System & IDE files
 .DS_Store
 Thumbs.db

@@ -1,23 +1,53 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response } from "express";
 
 const router = Router();
 
 // Theme definitions for SVG synthesis
-const THEME_GRADIENTS: Record<string, { start: string; mid: string; end: string; accent: string }> = {
-  cyber: { start: '#090a12', mid: '#12182d', end: '#062947', accent: '#00f2fe' },
-  sunset: { start: '#120b0d', mid: '#2c0e1b', end: '#401815', accent: '#ff7a18' },
-  obsidian: { start: '#090a0f', mid: '#14151f', end: '#1a1c2b', accent: '#ffffff' },
-  emerald: { start: '#08120e', mid: '#0f291e', end: '#063826', accent: '#00e676' },
-  minimal: { start: '#111216', mid: '#171922', end: '#1d202e', accent: '#9ca3af' }
+const THEME_GRADIENTS: Record<
+  string,
+  { start: string; mid: string; end: string; accent: string }
+> = {
+  cyber: {
+    start: "#090a12",
+    mid: "#12182d",
+    end: "#062947",
+    accent: "#00f2fe",
+  },
+  sunset: {
+    start: "#120b0d",
+    mid: "#2c0e1b",
+    end: "#401815",
+    accent: "#ff7a18",
+  },
+  obsidian: {
+    start: "#090a0f",
+    mid: "#14151f",
+    end: "#1a1c2b",
+    accent: "#ffffff",
+  },
+  emerald: {
+    start: "#08120e",
+    mid: "#0f291e",
+    end: "#063826",
+    accent: "#00e676",
+  },
+  minimal: {
+    start: "#111216",
+    mid: "#171922",
+    end: "#1d202e",
+    accent: "#9ca3af",
+  },
 };
 
-router.get('/og', (req: Request, res: Response) => {
-  const title = (req.query.title as string) || 'SnapBrand Dynamic Engine';
-  const subtitle = (req.query.subtitle as string) || 'High-performance vector rendering microservice';
-  const themeKey = (req.query.theme as string) || 'cyber';
-  const badge = (req.query.badge as string) || 'STUDIO GRADE';
-  const width = parseInt((req.query.width as string) || '1200', 10);
-  const height = parseInt((req.query.height as string) || '630', 10);
+router.get("/og", (req: Request, res: Response) => {
+  const title = (req.query.title as string) || "SnapBrand Dynamic Engine";
+  const subtitle =
+    (req.query.subtitle as string) ||
+    "High-performance vector rendering microservice";
+  const themeKey = (req.query.theme as string) || "cyber";
+  const badge = (req.query.badge as string) || "STUDIO GRADE";
+  const width = parseInt((req.query.width as string) || "1200", 10);
+  const height = parseInt((req.query.height as string) || "630", 10);
 
   const theme = THEME_GRADIENTS[themeKey] || THEME_GRADIENTS.cyber;
 
@@ -72,20 +102,26 @@ router.get('/og', (req: Request, res: Response) => {
     </g>
   </svg>`;
 
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+  res.setHeader("Content-Type", "image/svg+xml");
+  res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400");
   res.status(200).send(svg);
 });
 
 function escapeXml(unsafe: string): string {
   return unsafe.replace(/[<>&'"]/g, (c) => {
     switch (c) {
-      case '<': return '&lt;';
-      case '>': return '&gt;';
-      case '&': return '&amp;';
-      case '\'': return '&apos;';
-      case '"': return '&quot;';
-      default: return c;
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case "&":
+        return "&amp;";
+      case "'":
+        return "&apos;";
+      case '"':
+        return "&quot;";
+      default:
+        return c;
     }
   });
 }

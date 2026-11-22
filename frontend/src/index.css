@@ -6,11 +6,11 @@
   html {
     color-scheme: light dark;
   }
-  
+
   html.dark {
     color-scheme: dark;
   }
-  
+
   html.light {
     color-scheme: light;
   }
@@ -41,14 +41,22 @@
 
 /* Clean, non-neon canvas grid */
 .canvas-grid-pattern {
-  background-image: radial-gradient(circle, rgba(100, 116, 139, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    rgba(100, 116, 139, 0.15) 1px,
+    transparent 1px
+  );
   background-size: 20px 20px;
 }
 
 /* Smooth continuous marquee for templates */
 @keyframes smoothMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee-smooth {
@@ -73,7 +81,9 @@
 
 .card-3d-tilt {
   transform: perspective(1000px) rotateX(3deg) rotateY(-4deg);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s ease;
 }
 
 .card-3d-tilt:hover {

@@ -1,6 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Search, PenTool, FolderKanban, Library, Palette, Settings, LayoutDashboard, X } from 'lucide-react';
-import { ActiveView } from '../../types';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  PenTool,
+  FolderKanban,
+  Library,
+  Palette,
+  Settings,
+  LayoutDashboard,
+  X,
+} from "lucide-react";
+import { ActiveView } from "../../types";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -8,37 +17,73 @@ interface CommandPaletteProps {
   onSelectView: (view: ActiveView) => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onSelectView }) => {
-  const [query, setQuery] = useState('');
+export const CommandPalette: React.FC<CommandPaletteProps> = ({
+  isOpen,
+  onClose,
+  onSelectView,
+}) => {
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         onClose();
       }
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
     };
     if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener("keydown", handleKeyDown);
     }
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const actions = [
-    { title: 'Open Studio Canvas', view: 'studio' as ActiveView, icon: PenTool, category: 'Creation' },
-    { title: 'Browse Blueprints & Templates', view: 'templates' as ActiveView, icon: Library, category: 'Library' },
-    { title: 'Manage Projects', view: 'projects' as ActiveView, icon: FolderKanban, category: 'Workspaces' },
-    { title: 'Edit Brand Kit Palettes', view: 'brandkit' as ActiveView, icon: Palette, category: 'Design System' },
-    { title: 'Platform & Security Settings', view: 'settings' as ActiveView, icon: Settings, category: 'Settings' },
-    { title: 'Return to Dashboard', view: 'dashboard' as ActiveView, icon: LayoutDashboard, category: 'General' },
+    {
+      title: "Open Studio Canvas",
+      view: "studio" as ActiveView,
+      icon: PenTool,
+      category: "Creation",
+    },
+    {
+      title: "Browse Blueprints & Templates",
+      view: "templates" as ActiveView,
+      icon: Library,
+      category: "Library",
+    },
+    {
+      title: "Manage Projects",
+      view: "projects" as ActiveView,
+      icon: FolderKanban,
+      category: "Workspaces",
+    },
+    {
+      title: "Edit Brand Kit Palettes",
+      view: "brandkit" as ActiveView,
+      icon: Palette,
+      category: "Design System",
+    },
+    {
+      title: "Platform & Security Settings",
+      view: "settings" as ActiveView,
+      icon: Settings,
+      category: "Settings",
+    },
+    {
+      title: "Return to Dashboard",
+      view: "dashboard" as ActiveView,
+      icon: LayoutDashboard,
+      category: "General",
+    },
   ];
 
-  const filtered = actions.filter(a => a.title.toLowerCase().includes(query.toLowerCase()));
+  const filtered = actions.filter((a) =>
+    a.title.toLowerCase().includes(query.toLowerCase()),
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-black/70 backdrop-blur-sm">
@@ -54,7 +99,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             autoFocus
             className="w-full py-4 bg-transparent text-sm text-gray-100 placeholder-gray-500 focus:outline-none"
           />
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-300">
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-500 hover:text-gray-300"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -81,7 +129,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                     <Icon className="w-4 h-4 text-orange-400 group-hover:text-orange-300" />
                     <span>{item.title}</span>
                   </div>
-                  <span className="text-[11px] font-mono text-gray-500">{item.category}</span>
+                  <span className="text-[11px] font-mono text-gray-500">
+                    {item.category}
+                  </span>
                 </button>
               );
             })
