@@ -62,6 +62,11 @@ export const SEED_TEMPLATES: Template[] = [
   },
 ];
 
+router.get("/categories", (req: Request, res: Response) => {
+  const categories = Array.from(new Set(SEED_TEMPLATES.map((t) => t.category)));
+  res.json({ success: true, count: categories.length, categories });
+});
+
 router.get("/", (req: Request, res: Response) => {
   const { category } = req.query;
   if (category && typeof category === "string") {

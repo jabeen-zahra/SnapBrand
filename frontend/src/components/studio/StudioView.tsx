@@ -90,6 +90,8 @@ export const StudioView: React.FC<StudioViewProps> = ({
     { width: 1280, height: 640, label: "GitHub Header (1280x640)" },
     { width: 1500, height: 500, label: "Twitter/X Cover (1500x500)" },
     { width: 1080, height: 1080, label: "Square Post (1080x1080)" },
+    { width: 1080, height: 1920, label: "Vertical Story (1080x1920)" },
+    { width: 2400, height: 1260, label: "Retina 4K Banner (2400x1260)" },
   ];
 
   const availableTags = [
