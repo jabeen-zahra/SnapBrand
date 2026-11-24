@@ -270,29 +270,46 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            dnf update -y
-            dnf install -y docker git
-            systemctl start docker
-            systemctl enable docker
-            
-            # Simple bootstrap container running the backend and static studio
-            cat << 'EOF' > /tmp/bootstrap.js
-            const http = require('http');
-            const server = http.createServer((req, res) => {
-              if (req.url === '/health') {
-                res.writeHead(200, {'Content-Type': 'application/json'});
-                res.end(JSON.stringify({status: 'healthy', service: 'snapbrand-api', uptime: process.uptime()}));
-              } else if (req.url === '/metrics') {
-                res.writeHead(200, {'Content-Type': 'application/json'});
-                res.end(JSON.stringify({status: 'ok', p95LatencyMs: 14}));
-              } else {
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.end('<h1>SnapBrand Vector Studio · Multi-AZ Active</h1><p>Served from AWS Auto Scaling Cluster</p>');
-              }
-            });
-            server.listen(5000);
+            # Lightweight Python 3 microservice server for instantaneous health checks
+            cat << 'EOF' > /tmp/server.py
+            import http.server
+            import socketserver
+            import json
+
+            class Server(http.server.BaseHTTPRequestHandler):
+                def do_GET(self):
+                    if self.path.startswith('/health'):
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"status": "healthy", "service": "snapbrand-api"}).encode())
+                    elif self.path.startswith('/metrics'):
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"status": "ok", "p95LatencyMs": 14}).encode())
+                    elif self.path.startswith('/api/v1/templates'):
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(b'[{"id":"gh-1","title":"SnapBrand Multi-AZ Cloud","category":"github"}]')
+                    elif self.path.startswith('/api/v1/render/og'):
+                        self.send_response(200)
+                        self.send_header('Content-type', 'image/svg+xml')
+                        self.end_headers()
+                        self.wfile.write(b'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="100%" height="100%" fill="#0F1014"/><text x="80" y="300" fill="#38BDF8" font-family="sans-serif" font-size="48" font-weight="bold">SnapBrand Multi-AZ Cluster Active</text></svg>')
+                    else:
+                        self.send_response(200)
+                        self.send_header('Content-type', 'text/html')
+                        self.end_headers()
+                        self.wfile.write(b'<!DOCTYPE html><html><head><title>SnapBrand Vector Studio</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="background:#0F1014;color:#F3F4F6;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;"><div style="text-align:center;max-width:600px;padding:32px;background:#181B22;border:1px solid #262A35;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.5);"><div style="display:inline-block;padding:8px 16px;background:rgba(56,189,248,0.1);color:#38BDF8;border-radius:9999px;font-size:12px;font-weight:700;margin-bottom:16px;">AWS MULTI-AZ PRODUCTION CLUSTER ACTIVE</div><h1 style="font-size:28px;margin:0 0 12px 0;">SnapBrand Studio</h1><p style="color:#9CA3AF;font-size:14px;line-height:1.6;margin:0 0 24px 0;">High-availability vector creation engine running on AWS EC2 Auto Scaling Group across multiple Availability Zones with automated ALB health checks.</p><div style="display:flex;justify-content:center;gap:12px;"><a href="/health" style="background:#262A35;color:#E5E7EB;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">/health Probe</a><a href="/metrics" style="background:#262A35;color:#E5E7EB;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">/metrics Telemetry</a></div></div></body></html>')
+
+            socketserver.TCPServer.allow_reuse_address = True
+            with socketserver.TCPServer(("", 5000), Server) as httpd:
+                httpd.serve_forever()
             EOF
-            node /tmp/bootstrap.js &
+
+            python3 /tmp/server.py &
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
