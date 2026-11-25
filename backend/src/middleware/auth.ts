@@ -1,8 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "snapbrand_production_super_secret_jwt_key_2026";
+function resolveJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET must be provided in production");
+  }
+  // Non-production fallback only (local dev and unit tests).
+  return "dev-only-insecure-secret";
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 export interface AuthenticatedUser {
   id: string;

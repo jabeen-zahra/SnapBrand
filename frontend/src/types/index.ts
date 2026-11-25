@@ -1,5 +1,10 @@
 export type ActiveView =
-  "dashboard" | "studio" | "projects" | "templates" | "brandkit" | "settings";
+  | "dashboard"
+  | "studio"
+  | "projects"
+  | "templates"
+  | "brandkit"
+  | "settings";
 
 export interface User {
   id: string;

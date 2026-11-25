@@ -1,301 +1,211 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="SnapBrand: Studio-Grade Brand Assets and Edge Visual Engine" width="100%">
+  <img src="docs/assets/banner.svg" alt="SnapBrand" width="100%">
 </p>
 
-<p align="center">
-  <img alt="React" src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
-  <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
-  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_4-0F172A?style=for-the-badge&logo=tailwindcss&logoColor=38BDF8">
-  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white">
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white">
-  <img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
-  <img alt="Docker" src="https://img.shields.io/badge/Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white">
-  <img alt="AWS Multi-AZ" src="https://img.shields.io/badge/AWS-Multi--AZ-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white">
-  <img alt="Snyk" src="https://img.shields.io/badge/Snyk-Security-4C1588?style=for-the-badge&logo=snyk&logoColor=white">
-  <img alt="SonarCloud" src="https://img.shields.io/badge/SonarCloud-Quality_Gate-F3705A?style=for-the-badge&logo=sonarcloud&logoColor=white">
-  <img alt="Trivy" src="https://img.shields.io/badge/Trivy-Container_Scan-1904DA?style=for-the-badge&logo=aquasec&logoColor=white">
-</p>
+# SnapBrand
 
-**SnapBrand** is a high-velocity brand asset studio and edge dynamic visual engine designed for modern developers, creators, and engineering teams. It unites an interactive browser canvas studio (curved typography, generative mesh gradients, tech badges, and brand palettes) with a headless microservice API that synthesizes dynamic OpenGraph cards and social banners on the fly with sub-25ms response times.
+SnapBrand is a small brand-asset studio: a React single-page app (frontend service) plus a Node.js/Express API (backend service) that renders dynamic OpenGraph/SVG cards and stores projects, brand kits and an audit trail in a file-backed storage layer on a persistent volume. The app is deliberately small; the focus of this repository is the **DevSecOps pipeline, high availability, scaling, observability and security** around it.
 
-Engineered with an enterprise **12-stage DevSecOps pipeline**, SnapBrand demonstrates automated zero-trust security gates, multi-AZ high availability on AWS, autoscaling under heavy traffic, automated rollbacks, and real-time observability.
+**Live link:** http://snapbrand-prod-alb-1271941775.ap-southeast-2.elb.amazonaws.com/
 
----
+| Service | Tech | Port | Health endpoint |
+|---|---|---|---|
+| `frontend` | React 18 + Vite, served by nginx-unprivileged | 8080 (80 on the host) | `/healthz` |
+| `backend` | Node 20 + Express + TypeScript | 5000 | `/health` (also `/metrics`) |
+| storage | JSON file store on a Docker volume (`/app/data`) | n/a | reported in `/health` |
 
-## What's inside
-
-| | Capability | Details |
-|---|---|---|
-| <img src="docs/assets/icons/canvas.svg" width="20"> | **Studio Canvas** | Interactive dark workbench with dot-grid guide, precision scaling, layers reordering, real-time bounding box transformers, and instant viewport zooming. |
-| <img src="docs/assets/icons/typography.svg" width="20"> | **Warp Typography** | Vector typography engine supporting curved paths, neon glow shaders, letter-spacing, retro extrusion, and gradient fills without pixel rasterization. |
-| <img src="docs/assets/icons/mesh.svg" width="20"> | **Generative Gradients** | Multi-point SVG mesh gradient generator with real-time Perlin noise grain overlay, radial flares, and dark obsidian studio presets. |
-| <img src="docs/assets/icons/lightning.svg" width="20"> | **Edge Dynamic API** | Headless `/api/v1/render/og` endpoint that renders dynamic branded cards directly from URL search params with Redis edge caching. |
-| <img src="docs/assets/icons/layers.svg" width="20"> | **Brand Kit Hub** | Centralized palette manager, typography pairings, reusable tech stack badges (AWS, React, Docker, Linux), and persistent project state. |
-| <img src="docs/assets/icons/download.svg" width="20"> | **Multi-Format Export** | Lossless vector SVG, 2x Retina PNG, and WebP exports transcoded on demand from pure vector master state. |
-| <img src="docs/assets/icons/shield.svg" width="20"> | **Zero-Trust DevSecOps** | Gitleaks full-history scanning, Snyk dependency vulnerability checks, Trivy container CVE scans, SonarCloud quality gates, and least-privilege IAM OIDC. |
-| <img src="docs/assets/icons/container.svg" width="20"> | **Multi-AZ Cloud HA** | Highly available deployment spanning two AWS Availability Zones (`us-east-1a`, `us-east-1b`) with private EC2 ASG behind an Application Load Balancer. |
-| <img src="docs/assets/icons/terminal.svg" width="20"> | **Automation & Rollback** | Hardened bash scripts with `set -euo pipefail` passing ShellCheck, including post-deployment synthetic smoke tests with automatic rollback. |
-| <img src="docs/assets/icons/database.svg" width="20"> | **Observable Persistence** | PostgreSQL persistence for projects and audit trails, Redis for render cache and rate-limiting, paired with CloudWatch and SNS telemetry. |
+Each service has its own Dockerfile and is independently buildable and deployable. Note on the storage layer: data lives on a per-instance volume, so users created on one instance are not shared with another. That is an accepted trade-off for a small project; a managed database (RDS/DynamoDB) would be the next step.
 
 ---
 
 ## Architecture
 
-### 1. Cloud Infrastructure & Request Flow (AWS Multi-AZ VPC)
-
-```mermaid
-flowchart TD
-    User(["Client / Browser Studio"]) -->|"HTTPS (Port 443 / 80)"| ALB["Application Load Balancer<br/>Dual Public Subnets (AZ-a / AZ-b)"]
-    
-    subgraph VPC["AWS VPC: 10.0.0.0/16"]
-        subgraph PublicSubnets["Public Subnets (10.0.1.0/24 & 10.0.2.0/24)"]
-            ALB
-            NAT["NAT Gateway (Internet Egress)"]
-        end
-
-        subgraph PrivateSubnets["Private Subnets (10.0.10.0/24 & 10.0.20.0/24)"]
-            subgraph ASG["Auto Scaling Group (Min: 2, Max: 6, Desired: 2)"]
-                EC2_A["EC2 Instance (AZ-a)<br/>Docker Compose Stack"]
-                EC2_B["EC2 Instance (AZ-b)<br/>Docker Compose Stack"]
-            end
-            
-            subgraph DataLayer["Storage & Cache Layer"]
-                PG[("PostgreSQL 16<br/>Projects & Auth")]
-                Redis[("Redis 7<br/>Render Cache & Rate Limits")]
-            end
-        end
-    end
-
-    ALB -->|"HTTP Target Group (/health)"| EC2_A
-    ALB -->|"HTTP Target Group (/health)"| EC2_B
-    EC2_A --> PG
-    EC2_A --> Redis
-    EC2_B --> PG
-    EC2_B --> Redis
-    EC2_A -.->|"Outbound updates / ECR pull"| NAT
-    EC2_B -.->|"Outbound updates / ECR pull"| NAT
-    
-    CloudWatch["Amazon CloudWatch<br/>Metrics & Alarms"] --- ASG
-    CloudWatch -->|"Threshold Breached"| SNS["Amazon SNS<br/>DevOps Alert Topic"]
-```
-
-### 2. Real-Time Dynamic Asset Generation & Edge Cache Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Client as Webhook / Meta Crawler
-    participant ALB as Application Load Balancer
-    participant Nginx as Nginx Proxy
-    participant API as Backend Service
-    participant Cache as Redis Cache
-    participant Engine as SVG/Canvas Synthesizer
-
-    Client->>ALB: GET /api/v1/render/og?title=DevOps&theme=cyber
-    ALB->>Nginx: Forward request to private instance
-    Nginx->>API: Proxy pass /api/v1/render/og
-    API->>Cache: Check cached render hash (title+theme)
-    alt Cache Hit (<5ms)
-        Cache-->>API: Return cached SVG/PNG binary
-    else Cache Miss
-        API->>Engine: Synthesize brand layout & render vector
-        Engine-->>API: Generated lossless asset buffer
-        API->>Cache: Store buffer (TTL: 3600s)
-    end
-    API-->>Nginx: 200 OK (Content-Type: image/svg+xml)
-    Nginx-->>Client: Dynamic asset stream (Cache-Control: public, max-age=86400)
-```
-
----
-
-## The 12-Stage DevSecOps Pipeline
-
-The continuous integration and continuous deployment engine enforces security gates across 12 discrete, ordered stages. Stages 1–10 execute on every pull request and commit; Stages 11–12 trigger exclusively on merge to `main`.
+The full diagram (AWS services, AZs, request flow, 12 pipeline stages, OIDC roles, secrets, monitoring) is in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ```mermaid
 flowchart LR
-    subgraph CI["Pull Request / Feature Branch (Stages 1 - 10)"]
-        direction TB
-        S1["01. Secret Scan<br/>(Gitleaks full history)"] --> S2["02. Frontend/API Lint<br/>(ESLint)"]
-        S2 --> S3["03. Code Formatting<br/>(Prettier check)"]
-        S3 --> S4["04. Dockerfile Lint<br/>(Hadolint)"]
-        S4 --> S5["05. Automated Tests<br/>(Unit tests + Coverage)"]
-        S5 --> S6["06. Static Analysis<br/>(SonarCloud Quality Gate)"]
-        S6 --> S7["07. Dependency Scan<br/>(Snyk Open Source)"]
-        S7 --> S8["08. Multi-Stage Build<br/>(Docker Buildkit)"]
-        S8 --> S9["09. Image Scan<br/>(Trivy High/Crit CVEs)"]
-        S9 --> S10["10. ShellCheck<br/>(Script validation)"]
-    end
-
-    subgraph CD["Merge to Main Branch (Stages 11 - 12)"]
-        direction TB
-        S11["11. Registry Push & Rolling Deploy<br/>(Amazon ECR + ASG Instance Refresh)"] --> S12["12. Post-Deploy Smoke Test<br/>(Health probe & auto-rollback)"]
-    end
-
-    CI ==> CD
+  U([User]) -->|HTTP 80| ALB[ALB - public subnets, 2 AZs]
+  ALB -->|"/ (default)"| FE[frontend :80]
+  ALB -->|"/api/* /health /metrics"| BE[backend :5000]
+  subgraph PRIV[Private subnets - ASG min 2, max 4]
+    FE
+    BE --> VOL[(data volume)]
+  end
+  PRIV -->|egress via NAT| NAT[NAT Gateway]
+  GH[GitHub Actions] -->|OIDC| ROLES[CI role / Deploy role]
+  ROLES --> ECR[(ECR immutable tags)]
+  ROLES --> SSM[SSM Parameter Store]
+  PRIV -->|pull images, read tag + secret| ECR
+  PRIV --> CW[CloudWatch logs, metrics, alarms] --> SNS[SNS email]
 ```
 
-| Stage | Name | Tool | Blocking Condition |
-|---|---|---|---|
-| **01** | Secret Scanning | `Gitleaks` | Any leaked credential, token, or private key in repository history. |
-| **02** | Static Linting | `ESLint` | Any syntax, unhandled error, or code standard violation. |
-| **03** | Format Verification | `Prettier` | Any formatting discrepancy against project standard rules. |
-| **04** | Dockerfile Linting | `Hadolint` | Any non-pinned image tag, root user instruction, or build smell. |
-| **05** | Automated Tests | `Vitest / Jest` | Any failing test case or coverage drop below the required 80% threshold. |
-| **06** | SAST Quality Gate | `SonarCloud` | Code smell, security hotspot, or failed Sonar quality gate. |
-| **07** | Dependency Scan | `Snyk` | Any high or critical severity vulnerability in production dependencies. |
-| **08** | Container Build | `Docker Buildx` | Multi-stage image build failure or compilation fault. |
-| **09** | Image CVE Scan | `Trivy` | Any High or Critical CVE in base OS packages or installed layers. |
-| **10** | Script Verification | `ShellCheck` | Any POSIX violation, missing quote, or unset variable in shell scripts. |
-| **11** | Delivery & Deploy | `ECR + SSM / ASG` | Pushes immutable SHA tags to Amazon ECR and triggers rolling update. |
-| **12** | Smoke & Rollback | `smoke_test.sh` | Synthetically probes live ALB endpoints; automatically rolls back if health checks fail. |
-
----
-
-## Repository Layout
+## Repository layout
 
 ```
-snapbrand/
-├── frontend/                     # React 19 + TypeScript + Vite + Tailwind CSS
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── landing/          # 13-section enterprise landing page
-│   │   │   ├── studio/           # Canvas, LayerInspector, WarpTypography, ExportModal
-│   │   │   ├── dashboard/        # Metrics overview, Project grid, Recent activity
-│   │   │   ├── brandkit/         # Palette editor, Tech badges, Watermarks
-│   │   │   ├── settings/         # Profile, API Keys, DevSecOps Audit, Quotas
-│   │   │   ├── layout/           # Navbar, Collapsible mini-rail sidebar, Command palette
-│   │   │   └── common/           # Glass card, Modal, Toast notification, Badges
-│   │   ├── lib/                  # API client, Local state, Canvas math utilities
-│   │   └── types/                # TypeScript interfaces
-│   ├── Dockerfile                # Multi-stage build (Node alpine -> Nginx unprivileged)
-│   └── package.json
-├── backend/                      # Node.js + Express + TypeScript API Microservice
-│   ├── src/
-│   │   ├── routes/               # /auth, /projects, /templates, /render, /health, /metrics
-│   │   ├── services/             # Dynamic SVG generator, Token verification, Audit logger
-│   │   ├── middleware/           # Rate limiter, Security headers, Request tracing
-│   │   └── server.ts
-│   ├── tests/                    # Unit tests & coverage suite (Stage 5)
-│   ├── Dockerfile                # Multi-stage minimal Node alpine non-root container
-│   └── package.json
-├── infra/
-│   ├── nginx/                    # Reverse proxy configuration & security headers
-│   ├── docker-compose.yml        # Complete local stack (Frontend, Backend, DB, Redis)
-│   └── docker-compose.prod.yml   # Production stack with pinned ECR images
-├── scripts/
-│   ├── run_checks.sh             # Local pipeline runner (set -euo pipefail + ShellCheck)
-│   ├── smoke_test.sh             # Post-deploy verification & automated rollback
-│   └── load_test.js              # k6 stress testing script for Auto Scaling demo
-├── docs/
-│   └── assets/                   # Vector banners, visual identity, and icons
-├── .github/
-│   └── workflows/
-│       ├── devsecops-ci.yml      # 12-stage automated GitHub Actions workflow
-│       └── manual-rollback.yml   # Manual rollback dispatch workflow
-├── SECURITY.md                   # DevSecOps policy, scanning thresholds, and disclosure
-└── README.md
+frontend/            React SPA, Dockerfile, nginx config
+backend/             Express API, tests, Dockerfile
+infra/cloudformation.yml   Complete AWS platform (VPC, ALB, ASG, ECR, IAM/OIDC, CloudWatch, budget)
+docker-compose.yml         Local stack (builds images)
+docker-compose.prod.yml    Production variant (ECR images, awslogs), published to SSM by the pipeline
+scripts/                   Automation scripts (see below)
+.github/workflows/         devsecops-ci.yml (12 stages), manual-rollback.yml
+.github/dependabot.yml     Dependabot for npm, Docker and GitHub Actions
+SECURITY.md                Security policy and documented exceptions
+docs/                      Architecture, incident note, report, evidence checklist
 ```
 
----
+## Run locally (one command)
 
-## Quick Start (Local Development)
-
-### Prerequisites
-* Docker & Docker Compose v2.20+
-* Node.js v20+ (for direct host development)
-
-### 1. Launch with One Command
 ```bash
-# Clone the repository
-git clone https://github.com/jabeen-zahra/SnapBrand.git
-cd SnapBrand
-
-# Copy environment template
-cp .env.example .env
-
-# Spin up full stack (Nginx, Frontend, Backend, PostgreSQL, Redis)
+cp .env.example .env            # optional: set JWT_SECRET
 docker compose up -d --build
 ```
 
-Access the services:
-* **Frontend Studio**: [http://localhost:3000](http://localhost:3000)
-* **Backend API & Health**: [http://localhost:5000/health](http://localhost:5000/health)
-* **Metrics Endpoint**: [http://localhost:5000/metrics](http://localhost:5000/metrics)
-* **Dynamic OG Generator**: [http://localhost:5000/api/v1/render/og?title=Hello+World&theme=sunset](http://localhost:5000/api/v1/render/og?title=Hello+World&theme=sunset)
+* Frontend: http://localhost:3000
+* API health: http://localhost:5000/health  metrics: http://localhost:5000/metrics
+* Demo login: `creator@snapbrand.io` / `password123` (seed data)
 
----
+Stop: `docker compose down` (add `-v` to delete the data volume).
 
-## Shell Scripting & Automated Verification
+Without Docker: `npm --prefix backend ci && npm --prefix backend run dev`, and `npm --prefix frontend ci && npm --prefix frontend run dev`.
 
-In compliance with project specifications, all operational tasks are encapsulated in POSIX-compliant bash scripts with strict error trapping (`set -euo pipefail`), verified via **ShellCheck**:
+## Shell scripts
 
-### 1. Pre-Commit Validation (`scripts/run_checks.sh`)
-Executes all linting, formatting, test suites, and Dockerfile checks locally prior to opening a pull request.
-```bash
-./scripts/run_checks.sh
-```
+All scripts use `set -euo pipefail`, pass ShellCheck (pipeline stage 10) and are documented here.
 
-### 2. Post-Deployment Smoke Test & Auto-Rollback (`scripts/smoke_test.sh`)
-Executed automatically by GitHub Actions as Stage 12 after AWS deployment. If any endpoint returns non-200 or response latency exceeds 2000ms, the script immediately rolls back the Auto Scaling Group launch template to the previous stable image tag:
-```bash
-./scripts/smoke_test.sh --endpoint "http://<ALB_DNS>" --target-version "v1.2.0"
-```
-
----
-
-## High Availability & Scalability on AWS
-
-### Multi-AZ Infrastructure Specs
-* **VPC**: `10.0.0.0/16` partitioned into 2 Public (`10.0.1.0/24`, `10.0.2.0/24`) and 2 Private Subnets (`10.0.10.0/24`, `10.0.20.0/24`) across `us-east-1a` and `us-east-1b`.
-* **Zero Direct Public Access**: EC2 instances reside exclusively in private subnets with no public IPs; SSH (port 22) is completely disabled in favor of **AWS SSM Session Manager**.
-* **Auto Scaling Group (ASG)**:
-  * Minimum capacity: 2 instances (1 per AZ)
-  * Maximum capacity: 6 instances
-  * Target Tracking Policy: Scale out when average CPU utilization exceeds **60%** or ALB Request Count Per Target exceeds **500 req/min**.
-
-### Running the Load Test (k6)
-```bash
-k6 run --vus 50 --duration 3m scripts/load_test.js
-```
-*CloudWatch and ASG Activity logs will show automatic instance provisioning (`scale-out`) during peak load and graceful termination (`scale-in`) once traffic stabilizes.*
-
----
-
-## Observability & Incident Response
-
-* **Centralized CloudWatch Dashboard**: Real-time panels tracking ALB Request Rate, Target Response Time (P50/P95/P99), HTTP 5xx error spikes, and EC2 CPU/Memory metrics.
-* **Proactive SNS Alarms**:
-  1. `High-Error-Rate-Alarm`: Triggers if HTTP 5xx errors exceed 2% of total requests over a 2-minute evaluation window.
-  2. `Unhealthy-Target-Alarm`: Triggers if any target group instance fails 2 consecutive health checks.
-* **Failure Tolerance Test**: When an EC2 instance in AZ-a is manually terminated, the ALB immediately reroutes all active traffic to AZ-b with 0 dropped user requests while the ASG provisions a replacement instance within 90 seconds.
-
----
-
-## Team & Contribution Matrix
-
-In strict accordance with project submission criteria, all members contributed to core code, containerization, pipelines, and deployment:
-
-| Member Name | Email / GitHub | Project Ownership & Traceable Deliverables |
+| Script | Purpose | Called from |
 |---|---|---|
-| **Jabeen Zahra** | [kaneezezahra313@gmail.com](mailto:kaneezezahra313@gmail.com) <br/>`@jabeen-zahra` | **Project Architecture & Frontend Engineering**: <br/>• Interactive 3D vector canvas studio, live curve transformer & color moods <br/>• Gamma-style responsive interface, light/dark mode theme system <br/>• Client-side JWT session handling, Brand Kit manager, and template library |
-| **Mirfaq Javaid** | [mirfaqjavaid@gmail.com](mailto:mirfaqjavaid@gmail.com) | **Backend Microservices & Containerization**: <br/>• Node.js & TypeScript REST API with `/health` and `/metrics` probes <br/>• Multi-stage Dockerfiles (Node 20 Alpine, non-root user `UID 10001`, Hadolint) <br/>• Database persistence (SQLite/JSON), bcrypt password hashing, and unit tests (80%+ coverage) |
-| **Fatima Ijaz** | [f6618568@gmail.com](mailto:f6618568@gmail.com) | **Cloud Infrastructure & DevSecOps Lead**: <br/>• 12-Stage GitHub Actions CI/CD Pipeline (Gitleaks, SonarCloud, Snyk, Trivy) <br/>• Hardened bash automation scripts with `set -euo pipefail` passing ShellCheck <br/>• AWS Multi-AZ VPC architecture, Auto Scaling Group (ASG), and CloudWatch monitoring |
+| `scripts/run_checks.sh` | Local pre-PR gate: ShellCheck, Gitleaks, ESLint, tests, Hadolint | developers |
+| `scripts/smoke_test.sh <url> [version]` | Post-deploy smoke test: `/health` (checks the expected version), API, render, frontend | **stage 12**, manual rollback workflow |
+| `scripts/deploy.sh <tag>` | Verifies tag in ECR, writes tag + compose file to SSM, rolling ASG instance refresh, waits | **stage 11** |
+| `scripts/rollback.sh <tag>` | Rolls the fleet back to a previous tag | **stage 12** (auto), manual rollback workflow |
+| `scripts/deploy_stack.sh <email>` | Creates/updates the CloudFormation stack | operators |
+| `scripts/teardown.sh --yes` | Deletes images, parameters and the stack | operators |
+| `scripts/demo_failover.sh <url>` | Terminates an instance while polling the ALB (HA evidence) | operators |
+| `scripts/incident_demo.sh inject\|fix` | Deliberate failure drill (see [docs/INCIDENT.md](docs/INCIDENT.md)) | operators |
+| `scripts/load_test.js` | k6 load test for scale-out / scale-in | operators |
 
----
+## CI/CD pipeline (12 stages)
 
-## Branching Strategy & Contribution Workflow
+Stages 1-10 run on every push and pull request; 11-12 run automatically on merge to `main`. Each stage is a separate job that needs the previous one, so a failure stops the pipeline.
 
-SnapBrand enforces a disciplined **Trunk-Based / Feature-Branch Workflow**:
-* `main`: Protected production branch. Direct pushes are blocked. Merges require:
-  1. Passing all 10 automated pre-merge CI checks (Stages 1 to 10).
-  2. At least one pull request review approval from a team member.
-* `feature/<feature-name>`: Dedicated feature branches for ongoing development.
-* `fix/<bug-name>`: Targeted defect remediations.
+| # | Job | Tool | Fails the build when |
+|---|---|---|---|
+| 01 | Secret Scan | Gitleaks (full history) | any secret is found |
+| 02 | Code Linting | ESLint | any lint error |
+| 03 | Code Formatting | Prettier | any unformatted file |
+| 04 | Dockerfile Lint | Hadolint | warning or error |
+| 05 | Unit Tests & Coverage | Vitest + v8 coverage | failing test (coverage uploaded as artifact) |
+| 06 | Static Analysis | SonarCloud | quality gate fails (`qualitygate.wait=true`) |
+| 07 | Dependency Scan | Snyk | any high or critical vulnerability |
+| 08 | Docker Image Build | Buildx, multi-stage | build error |
+| 09 | Container Scan | Trivy | any HIGH or CRITICAL CVE |
+| 10 | Shell Scripting Gate | ShellCheck | any finding |
+| 11 | CD Push & Rolling Deploy | ECR + SSM + ASG instance refresh | push or rollout fails (auto-rolls back) |
+| 12 | Smoke Test & Auto-Rollback | `smoke_test.sh` | smoke test fails: rolls back to the previous tag, then fails the run |
 
----
+No scanner is disabled and no threshold is lowered. Findings must be fixed or documented in [SECURITY.md](SECURITY.md).
+
+**Versioning.** Every deployed image is tagged with the git commit SHA **and** a semantic version `v<VERSION file>.<run number>` (for example `v1.0.7`). ECR tag immutability is on; `latest` is never used.
+
+**Rolling deployment.** `deploy.sh` publishes the tag to SSM `/snapbrand/image-tag` and starts an ASG instance refresh with `MinHealthyPercentage=50`: one instance is replaced at a time while the other keeps serving. New instances read the tag and the compose file from SSM at boot.
+
+**Rollback.** Automatic (stage 12 failure, or stage 11 rollout failure) and manual: *Actions -> Manual Deployment Rollback -> Run workflow -> enter an image tag*.
+
+### One-time GitHub setup
+
+| Item | Where | Value |
+|---|---|---|
+| `SONAR_TOKEN` | Secrets | from SonarCloud (project key `jabeen-zahra_SnapBrand`, org `jabeen-zahra` in `sonar-project.properties`; adjust if different) |
+| `SNYK_TOKEN` | Secrets | from Snyk account settings |
+| `AWS_CI_ROLE_ARN`, `AWS_DEPLOY_ROLE_ARN`, `ALB_URL` | Variables | stack outputs (defaults for this account are built into the workflow) |
+
+No AWS access keys are stored anywhere: the pipeline uses GitHub OIDC.
+
+### Branching strategy and branch protection
+
+* `main` is protected by a ruleset: direct pushes blocked, pull request with **at least one approving review** required, force-push and deletion blocked, and **all ten CI jobs are required status checks**: `01. Secret Scan (Gitleaks)`, `02. Code Linting (ESLint)`, `03. Code Formatting (Prettier)`, `04. Dockerfile Lint (Hadolint)`, `05. Unit Tests & Coverage`, `06. Static Analysis (SonarCloud)`, `07. Dependency Scan (Snyk)`, `08. Docker Image Build`, `09. Container Scan (Trivy)`, `10. Shell Scripting Gate (ShellCheck)`.
+* Work happens on `feature/<name>` or `fix/<name>` branches, merged through pull requests reviewed by another group member.
+
+## Deploy from scratch on AWS (region ap-southeast-2)
+
+Prerequisites: AWS CLI v2 configured with an admin-capable identity, the repository on GitHub.
+
+1. **Create the platform** (VPC, ALB, ASG, ECR, IAM roles + OIDC provider, secret, alarms, dashboard, budget):
+   ```bash
+   ./scripts/deploy_stack.sh you@example.com            # add: false <existing-oidc-arn> if the GitHub OIDC provider already exists
+   ```
+   Confirm the SNS subscription email that AWS sends.
+2. **Set GitHub values** (section above): `SONAR_TOKEN`, `SNYK_TOKEN`, optional role/URL variables.
+3. **Deploy**: merge a pull request to `main`. Stage 11 builds and pushes both images, publishes the release to SSM and rolls the fleet; stage 12 smoke-tests the ALB. Instances stay unhealthy until the first release is published.
+4. Open the `LoadBalancerDNS` output in a browser.
+
+### Every configuration choice (so it can be rebuilt by hand)
+
+**Network (`infra/cloudformation.yml`)**
+
+| Resource | Setting | Why |
+|---|---|---|
+| VPC | `10.0.0.0/16`, DNS hostnames on | Room for many /24 subnets |
+| Public subnets | `10.0.1.0/24` (AZ a), `10.0.2.0/24` (AZ b); route `0.0.0.0/0 -> Internet Gateway` | Only the ALB and NAT live here |
+| Private subnets | `10.0.10.0/24` (AZ a), `10.0.20.0/24` (AZ b); route `0.0.0.0/0 -> NAT Gateway` | Instances have no public IP and are unreachable from the internet |
+| NAT Gateway | One, in public subnet A | Lets private instances reach ECR, SSM and GitHub. One NAT keeps cost low; one per AZ would remove this single point of failure |
+| ALB SG | inbound TCP 80 from `0.0.0.0/0` | Public entry point |
+| Instance SG | inbound TCP 80 and 5000 **only from the ALB SG**; no port 22 | Instances accept traffic only from the load balancer; management is via SSM Session Manager |
+
+**Load balancer.** Internet-facing ALB across both public subnets. Listener `:80` default action forwards to the **frontend target group** (port 80, health check `/healthz`); a listener rule (priority 10) forwards `/api/*`, `/health`, `/metrics` to the **backend target group** (port 5000, health check `/health`, expects 200). Health check interval 15 s, healthy 2, unhealthy 3, deregistration delay 30 s.
+
+**Launch template.** Amazon Linux 2023 (SSM-resolved latest AMI), `t3.micro`, 12 GB encrypted gp3, IMDSv2 required, instance profile `snapbrand-prod-instance-profile`, no key pair. User data installs Docker + Compose + the CloudWatch agent, then a systemd unit reads `/snapbrand/image-tag`, `/snapbrand/compose` (SSM) and the JWT secret (Secrets Manager), logs in to ECR and runs `docker compose up -d` with `docker-compose.prod.yml`.
+
+**Auto Scaling Group.** Private subnets in both AZs, min 2 / desired 2 / max 4, health check type ELB (grace 300 s), registered with both target groups. Scaling policies (target tracking): average CPU 60 percent, and ALB request count per target 300 per minute.
+
+**ECR.** `snapbrand-frontend` and `snapbrand-backend`, `ImageTagMutability=IMMUTABLE`, scan on push.
+
+**IAM (least privilege, three separate roles).**
+
+| Role | Used by | Permissions |
+|---|---|---|
+| `snapbrand-prod-instance-role` | EC2 instances | SSM core (Session Manager), ECR read-only, CloudWatch agent, `ssm:GetParameter` on `/snapbrand/*`, `secretsmanager:GetSecretValue` on the JWT secret |
+| `snapbrand-prod-ci-role` | GitHub Actions (stage 11 push) | ECR push to the two repositories only |
+| `snapbrand-prod-deploy-role` | GitHub Actions (stage 11/12, rollback) | read/write `/snapbrand/*` parameters, start/cancel instance refresh on this ASG, describe ASG/refresh/target health, `ecr:DescribeImages` |
+
+Both GitHub roles trust only the GitHub OIDC provider with `aud=sts.amazonaws.com` and `sub=repo:jabeen-zahra/SnapBrand:ref:refs/heads/main`. Secrets: JWT secret in **AWS Secrets Manager** (generated, never in git), release config in **SSM Parameter Store**, CI tokens in **GitHub Secrets**.
+
+**Observability.** CloudWatch dashboard `snapbrand-prod-overview` (request rate, 4xx/5xx errors, p95 and average latency, CPU and memory, target health, ASG capacity, backend log table); log groups `/snapbrand/backend` and `/snapbrand/frontend` fed by the Docker `awslogs` driver; four alarms (high CPU, unhealthy targets, ELB 5xx, high latency) notifying an SNS topic with an email subscription; AWS Budget at 80 percent of the monthly limit.
+
+## Network design and service discovery
+
+* **Public vs private:** only the ALB and NAT gateway are in public subnets. The application runs in private subnets, so there is no inbound path except ALB -> instance on ports 80/5000.
+* **How a request flows:** browser -> ALB (HTTP 80) -> path rule: `/api/*`, `/health`, `/metrics` go to the backend target group, everything else to the frontend target group -> container on the instance.
+* **Service-to-service:** inside an instance, both containers share the Docker Compose network `snapbrand-net`; nginx in the frontend container proxies `/api` to `http://backend:5000` using Docker DNS. Locally the same compose network is used.
+* **Egress:** private instances reach ECR, SSM and package mirrors through the NAT gateway.
+
+## Failure tolerance, scaling and incident evidence
+
+```bash
+./scripts/demo_failover.sh http://<ALB_DNS> 300      # terminate an instance while the app is polled
+k6 run -e TARGET_URL=http://<ALB_DNS> scripts/load_test.js   # scale-out then scale-in
+./scripts/incident_demo.sh inject                    # deliberate failure; later: ./scripts/incident_demo.sh fix
+```
+
+Evidence to capture (CloudWatch metrics, ASG activity history, alarm email) is listed in [docs/EVIDENCE_CHECKLIST.md](docs/EVIDENCE_CHECKLIST.md). Post-incident note: [docs/INCIDENT.md](docs/INCIDENT.md).
+
+## Tear everything down
+
+```bash
+./scripts/teardown.sh --yes     # deletes ECR images, SSM parameters and the whole CloudFormation stack
+```
+
+## Team
+
+| Member | GitHub | Ownership |
+|---|---|---|
+| Jabeen Zahra | `jabeen-zahra` | Frontend, application architecture, AWS console work, repository admin |
+| Mirfaq Javaid | `Mirfaq` | Backend service, Dockerfiles, tests, pull-request review |
+| Fatima Ijaz | `Fatima-Ijaz` | CI/CD pipeline, security tooling, cloud infrastructure |
+
+(Final contribution table with roll numbers: [docs/REPORT.md](docs/REPORT.md).)
 
 ## License
-Built with precision for the **DevOps & Cloud Engineering Final Showcase**.  
-Licensed under the [MIT License](LICENSE).
+
+MIT, see [LICENSE](LICENSE).

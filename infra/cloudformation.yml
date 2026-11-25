@@ -1,26 +1,44 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'SnapBrand Multi-AZ High-Availability Cloud Infrastructure on AWS'
+Description: 'SnapBrand Multi-AZ HA platform: VPC, ALB, ASG, ECR, IAM (OIDC), observability'
 
 Parameters:
   EnvironmentName:
     Type: String
     Default: snapbrand-prod
-    Description: Prefix for resources created by this stack
-
   InstanceType:
     Type: String
     Default: t3.micro
     AllowedValues: [t2.micro, t3.micro, t3.small, t3.medium]
-    Description: EC2 instance type for Auto Scaling Group
-
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64'
-    Description: Automatically resolve the latest Amazon Linux 2023 AMI
+  GitHubRepo:
+    Type: String
+    Default: jabeen-zahra/SnapBrand
+    Description: GitHub owner/repo allowed to assume the CI and deploy roles through OIDC
+  CreateOIDCProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Set to false if the GitHub OIDC provider already exists in this account
+  ExistingOIDCProviderArn:
+    Type: String
+    Default: ''
+    Description: Required only when CreateOIDCProvider is false
+  AlertEmail:
+    Type: String
+    Description: Email that receives CloudWatch alarm and budget notifications
+  BudgetLimitUsd:
+    Type: Number
+    Default: 25
+    Description: Monthly AWS Budget limit; an alert is sent at 80 percent
+
+Conditions:
+  MakeOIDCProvider: !Equals [!Ref CreateOIDCProvider, 'true']
 
 Resources:
   # ============================================================================
-  # 1. NETWORKING: VPC & SUBNETS (Multi-AZ)
+  # 1. NETWORKING: VPC 10.0.0.0/16, 2 public + 2 private subnets in 2 AZs
   # ============================================================================
   VPC:
     Type: AWS::EC2::VPC
@@ -45,7 +63,6 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  # Public Subnet A
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -57,7 +74,6 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-public-subnet-a'
 
-  # Public Subnet B
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -69,7 +85,6 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-public-subnet-b'
 
-  # Private Subnet A
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -81,7 +96,6 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-private-subnet-a'
 
-  # Private Subnet B
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -93,7 +107,6 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-private-subnet-b'
 
-  # Public Route Table
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -122,7 +135,6 @@ Resources:
       SubnetId: !Ref PublicSubnetB
       RouteTableId: !Ref PublicRouteTable
 
-  # Private Route Table
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -143,13 +155,39 @@ Resources:
       SubnetId: !Ref PrivateSubnetB
       RouteTableId: !Ref PrivateRouteTable
 
+  # Single NAT gateway (cost-optimised; one per AZ would be fully HA) for private egress
+  NatEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-nat-eip'
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-nat'
+
+  PrivateDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+
   # ============================================================================
-  # 2. SECURITY GROUPS (Least Privilege)
+  # 2. SECURITY GROUPS (least privilege, no SSH)
   # ============================================================================
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Public ALB security group allowing inbound HTTP
+      GroupDescription: Public ALB, inbound HTTP from the internet
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -163,24 +201,23 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Private EC2 security group allowing traffic from ALB only
+      GroupDescription: Private instances, traffic from the ALB security group only (no SSH)
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5000
-          ToPort: 5000
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           SourceSecurityGroupId: !Ref ALBSecurityGroup
-      # Zero open SSH (port 22) - Remote management via AWS Systems Manager
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-ec2-sg'
 
   # ============================================================================
-  # 3. APPLICATION LOAD BALANCER & TARGET GROUP
+  # 3. APPLICATION LOAD BALANCER, TARGET GROUPS, PATH ROUTING
   # ============================================================================
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -188,24 +225,34 @@ Resources:
       Name: !Sub '${EnvironmentName}-alb'
       Scheme: internet-facing
       Type: application
-      Subnets:
-        - !Ref PublicSubnetA
-        - !Ref PublicSubnetB
-      SecurityGroups:
-        - !Ref ALBSecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-alb'
+      Subnets: [!Ref PublicSubnetA, !Ref PublicSubnetB]
+      SecurityGroups: [!Ref ALBSecurityGroup]
 
-  ALBTargetGroup:
+  FrontendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub '${EnvironmentName}-tg'
+      Name: !Sub '${EnvironmentName}-fe-tg'
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: instance
+      HealthCheckPath: /healthz
+      HealthCheckIntervalSeconds: 15
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-be-tg'
       Port: 5000
       Protocol: HTTP
       VpcId: !Ref VPC
       TargetType: instance
-      HealthCheckProtocol: HTTP
       HealthCheckPath: /health
       HealthCheckIntervalSeconds: 15
       HealthCheckTimeoutSeconds: 5
@@ -213,9 +260,9 @@ Resources:
       UnhealthyThresholdCount: 3
       Matcher:
         HttpCode: '200'
-      Tags:
-        - Key: Name
-          Value: !Sub '${EnvironmentName}-target-group'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
 
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -225,11 +272,32 @@ Resources:
       Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroup
+          TargetGroupArn: !Ref FrontendTargetGroup
+
+  BackendPathRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref ALBListener
+      Priority: 10
+      Conditions:
+        - Field: path-pattern
+          Values: ['/api/*', '/health', '/metrics']
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
 
   # ============================================================================
-  # 4. IAM ROLE & INSTANCE PROFILE
+  # 4. SECRETS + IAM (instance role, CI role, deploy role, GitHub OIDC)
   # ============================================================================
+  JwtSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${EnvironmentName}/jwt-secret'
+      Description: JWT signing secret injected into the backend at boot
+      GenerateSecretString:
+        PasswordLength: 48
+        ExcludePunctuation: true
+
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -245,16 +313,119 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: read-deploy-config
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/snapbrand/*'
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref JwtSecret
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       InstanceProfileName: !Sub '${EnvironmentName}-instance-profile'
-      Roles:
-        - !Ref InstanceRole
+      Roles: [!Ref InstanceRole]
+
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      ThumbprintList: [6938fd4d98bab03faadb97b34396831e3780aea1]
+
+  # CI role: can only push images to the two ECR repositories
+  CIRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-ci-role'
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [MakeOIDCProvider, !Ref GitHubOIDCProvider, !Ref ExistingOIDCProviderArn]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+      Policies:
+        - PolicyName: ecr-push-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:CompleteLayerUpload
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                  - ecr:DescribeImages
+                Resource:
+                  - !GetAtt FrontendECRRepository.Arn
+                  - !GetAtt BackendECRRepository.Arn
+
+  # Deployment role: rolling refresh of this ASG and the /snapbrand/* parameters only
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-deploy-role'
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [MakeOIDCProvider, !Ref GitHubOIDCProvider, !Ref ExistingOIDCProviderArn]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+      Policies:
+        - PolicyName: rolling-deploy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:PutParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/snapbrand/*'
+              - Effect: Allow
+                Action:
+                  - autoscaling:StartInstanceRefresh
+                  - autoscaling:CancelInstanceRefresh
+                Resource: !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:autoScalingGroup:*:autoScalingGroupName/${EnvironmentName}-asg'
+              - Effect: Allow
+                Action:
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeInstanceRefreshes
+                  - elasticloadbalancing:DescribeTargetHealth
+                Resource: '*'
+              - Effect: Allow
+                Action: ecr:DescribeImages
+                Resource:
+                  - !GetAtt FrontendECRRepository.Arn
+                  - !GetAtt BackendECRRepository.Arn
 
   # ============================================================================
-  # 5. LAUNCH TEMPLATE & AUTO SCALING GROUP
+  # 5. LAUNCH TEMPLATE & AUTO SCALING GROUP (private subnets)
   # ============================================================================
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -265,67 +436,117 @@ Resources:
         InstanceType: !Ref InstanceType
         IamInstanceProfile:
           Arn: !GetAtt InstanceProfile.Arn
-        SecurityGroupIds:
-          - !Ref InstanceSecurityGroup
+        SecurityGroupIds: [!Ref InstanceSecurityGroup]
+        MetadataOptions:
+          HttpTokens: required
+          HttpPutResponseHopLimit: 2
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 12
+              VolumeType: gp3
+              Encrypted: true
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub '${EnvironmentName}-asg-instance'
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
-            dnf update -y
-            dnf install -y git nodejs
-            
-            mkdir -p /opt/snapbrand
-            git clone -b feature/production-hardening https://github.com/jabeen-zahra/SnapBrand.git /opt/snapbrand
-            cd /opt/snapbrand/backend
-            npm install --omit=dev
-            
-            cat << 'EOF' > /etc/systemd/system/snapbrand.service
+            set -euxo pipefail
+            exec > >(tee /var/log/user-data.log) 2>&1
+
+            dnf install -y docker amazon-cloudwatch-agent
+            systemctl enable --now docker
+            mkdir -p /usr/local/lib/docker/cli-plugins /opt/snapbrand
+            curl -fsSL https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64 \
+              -o /usr/local/lib/docker/cli-plugins/docker-compose
+            chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+            # CloudWatch agent: memory + disk metrics for the dashboard
+            cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWEOF'
+            {
+              "agent": { "metrics_collection_interval": 60 },
+              "metrics": {
+                "append_dimensions": { "AutoScalingGroupName": "${!aws:AutoScalingGroupName}" },
+                "metrics_collected": {
+                  "mem": { "measurement": ["mem_used_percent"] },
+                  "disk": { "measurement": ["used_percent"], "resources": ["/"] }
+                }
+              }
+            }
+            CWEOF
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s \
+              -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+            # Release bootstrap: reads the desired image tag + compose file from SSM
+            cat > /usr/local/bin/snapbrand-start.sh <<'STEOF'
+            #!/bin/bash
+            set -euo pipefail
+            REGION=${AWS::Region}
+            ACCOUNT=${AWS::AccountId}
+            REGISTRY="$ACCOUNT.dkr.ecr.$REGION.amazonaws.com"
+            TAG=$(aws ssm get-parameter --region "$REGION" --name /snapbrand/image-tag --query Parameter.Value --output text)
+            aws ssm get-parameter --region "$REGION" --name /snapbrand/compose --query Parameter.Value --output text > /opt/snapbrand/docker-compose.yml
+            SIMULATE=$(aws ssm get-parameter --region "$REGION" --name /snapbrand/simulate-failure --query Parameter.Value --output text 2>/dev/null || echo false)
+            JWT=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id ${EnvironmentName}/jwt-secret --query SecretString --output text)
+            umask 077
+            {
+              echo "ECR_REGISTRY=$REGISTRY"
+              echo "IMAGE_TAG=$TAG"
+              echo "AWS_REGION=$REGION"
+              echo "JWT_SECRET=$JWT"
+              echo "SIMULATE_FAILURE=$SIMULATE"
+            } > /opt/snapbrand/.env
+            aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+            cd /opt/snapbrand
+            docker compose --env-file .env -f docker-compose.yml up -d --remove-orphans
+            STEOF
+            chmod +x /usr/local/bin/snapbrand-start.sh
+
+            cat > /etc/systemd/system/snapbrand.service <<'UNITEOF'
             [Unit]
-            Description=SnapBrand Full-Stack Microservice
-            After=network.target
+            Description=SnapBrand compose stack
+            After=docker.service network-online.target
+            Requires=docker.service
 
             [Service]
-            Type=simple
-            User=root
-            WorkingDirectory=/opt/snapbrand/backend
-            ExecStart=/usr/bin/node dist/server.js
-            Restart=always
-            RestartSec=5
-            Environment=NODE_ENV=production
-            Environment=PORT=5000
+            Type=oneshot
+            RemainAfterExit=yes
+            ExecStart=/usr/local/bin/snapbrand-start.sh
+            Restart=on-failure
+            RestartSec=20
 
             [Install]
             WantedBy=multi-user.target
-            EOF
-
+            UNITEOF
             systemctl daemon-reload
-            systemctl enable snapbrand
-            systemctl start snapbrand
+            systemctl enable --now --no-block snapbrand.service
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: !Sub '${EnvironmentName}-asg'
-      VPCZoneIdentifier:
-        - !Ref PublicSubnetA
-        - !Ref PublicSubnetB
+      VPCZoneIdentifier: [!Ref PrivateSubnetA, !Ref PrivateSubnetB]
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
       MinSize: '2'
       MaxSize: '4'
       DesiredCapacity: '2'
-      TargetGroupARNs:
-        - !Ref ALBTargetGroup
+      TargetGroupARNs: [!Ref FrontendTargetGroup, !Ref BackendTargetGroup]
       HealthCheckType: ELB
-      HealthCheckGracePeriod: 180
+      HealthCheckGracePeriod: 300
+      DefaultInstanceWarmup: 120
+      MetricsCollection:
+        - Granularity: 1Minute
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-asg-instance'
           PropagateAtLaunch: true
 
-  # Target Tracking Scaling Policy: Scale on 60% CPU
-  TargetTrackingPolicy:
+  CpuTargetTracking:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AutoScalingGroupName: !Ref AutoScalingGroup
@@ -335,8 +556,19 @@ Resources:
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue: 60.0
 
+  RequestCountTargetTracking:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          ResourceLabel: !Join ['/', [!GetAtt ApplicationLoadBalancer.LoadBalancerFullName, !GetAtt BackendTargetGroup.TargetGroupFullName]]
+        TargetValue: 300.0
+
   # ============================================================================
-  # 6. CONTAINER REGISTRIES (Amazon ECR with Tag Immutability)
+  # 6. CONTAINER REGISTRIES (immutable tags)
   # ============================================================================
   FrontendECRRepository:
     Type: AWS::ECR::Repository
@@ -355,30 +587,162 @@ Resources:
         ScanOnPush: true
 
   # ============================================================================
-  # 7. OBSERVABILITY: CLOUDWATCH ALARMS & SNS NOTIFICATIONS
+  # 7. OBSERVABILITY: LOGS, ALARMS (SNS), DASHBOARD, BUDGET
   # ============================================================================
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /snapbrand/backend
+      RetentionInDays: 14
+
+  FrontendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /snapbrand/frontend
+      RetentionInDays: 14
+
   NotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub '${EnvironmentName}-alerts'
 
+  NotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref NotificationTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
   HighCPUAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub '${EnvironmentName}-high-cpu'
-      AlarmDescription: Triggers when ASG CPU exceeds 75%
+      AlarmDescription: ASG average CPU above 75 percent
       MetricName: CPUUtilization
       Namespace: AWS/EC2
       Statistic: Average
       Period: 60
       EvaluationPeriods: 2
-      Threshold: 75.0
+      Threshold: 75
       ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
       Dimensions:
         - Name: AutoScalingGroupName
           Value: !Ref AutoScalingGroup
-      AlarmActions:
-        - !Ref NotificationTopic
+      AlarmActions: [!Ref NotificationTopic]
+
+  UnhealthyTargetsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${EnvironmentName}-unhealthy-targets'
+      AlarmDescription: At least one backend target is failing ALB health checks
+      MetricName: UnHealthyHostCount
+      Namespace: AWS/ApplicationELB
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: TargetGroup
+          Value: !GetAtt BackendTargetGroup.TargetGroupFullName
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      AlarmActions: [!Ref NotificationTopic]
+
+  High5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${EnvironmentName}-high-5xx'
+      AlarmDescription: Five or more 5xx responses in one minute
+      MetricName: HTTPCode_ELB_5XX_Count
+      Namespace: AWS/ApplicationELB
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      AlarmActions: [!Ref NotificationTopic]
+
+  HighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${EnvironmentName}-high-latency'
+      AlarmDescription: Average target response time above 1 second
+      MetricName: TargetResponseTime
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !GetAtt ApplicationLoadBalancer.LoadBalancerFullName
+      AlarmActions: [!Ref NotificationTopic]
+
+  Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${EnvironmentName}-overview'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            { "type": "metric", "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": { "title": "Request rate (requests / min)", "region": "${AWS::Region}", "stat": "Sum", "period": 60,
+                "metrics": [ ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"] ] } },
+            { "type": "metric", "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": { "title": "Errors (4xx / 5xx)", "region": "${AWS::Region}", "stat": "Sum", "period": 60,
+                "metrics": [ ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"],
+                             ["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"],
+                             ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"] ] } },
+            { "type": "metric", "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": { "title": "Latency (TargetResponseTime)", "region": "${AWS::Region}", "period": 60,
+                "metrics": [ ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}", { "stat": "p95", "label": "p95" }],
+                             ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}", { "stat": "Average", "label": "avg" }] ] } },
+            { "type": "metric", "x": 12, "y": 6, "width": 12, "height": 6,
+              "properties": { "title": "CPU and memory (ASG)", "region": "${AWS::Region}", "period": 60,
+                "metrics": [ ["AWS/EC2", "CPUUtilization", "AutoScalingGroupName", "${AutoScalingGroup}", { "stat": "Average" }],
+                             ["CWAgent", "mem_used_percent", "AutoScalingGroupName", "${AutoScalingGroup}", { "stat": "Average" }] ] } },
+            { "type": "metric", "x": 0, "y": 12, "width": 12, "height": 6,
+              "properties": { "title": "Backend target health", "region": "${AWS::Region}", "stat": "Maximum", "period": 60,
+                "metrics": [ ["AWS/ApplicationELB", "HealthyHostCount", "TargetGroup", "${BackendTargetGroup.TargetGroupFullName}", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"],
+                             ["AWS/ApplicationELB", "UnHealthyHostCount", "TargetGroup", "${BackendTargetGroup.TargetGroupFullName}", "LoadBalancer", "${ApplicationLoadBalancer.LoadBalancerFullName}"] ] } },
+            { "type": "metric", "x": 12, "y": 12, "width": 12, "height": 6,
+              "properties": { "title": "ASG instances", "region": "${AWS::Region}", "stat": "Average", "period": 60,
+                "metrics": [ ["AWS/AutoScaling", "GroupInServiceInstances", "AutoScalingGroupName", "${AutoScalingGroup}"],
+                             ["AWS/AutoScaling", "GroupDesiredCapacity", "AutoScalingGroupName", "${AutoScalingGroup}"] ] } },
+            { "type": "log", "x": 0, "y": 18, "width": 24, "height": 6,
+              "properties": { "title": "Backend logs (latest)", "region": "${AWS::Region}", "view": "table",
+                "query": "SOURCE '/snapbrand/backend' | fields @timestamp, @message | sort @timestamp desc | limit 50" } }
+          ]
+        }
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${EnvironmentName}-monthly'
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref BudgetLimitUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
 
 Outputs:
   LoadBalancerDNS:
@@ -386,15 +750,19 @@ Outputs:
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
       Name: !Sub '${EnvironmentName}-ALB-DNS'
-
-  TargetGroupArn:
-    Description: ARN of the Target Group
-    Value: !Ref ALBTargetGroup
-
+  AutoScalingGroupName:
+    Value: !Ref AutoScalingGroup
   FrontendECR:
-    Description: ECR Repository URI for Frontend
     Value: !GetAtt FrontendECRRepository.RepositoryUri
-
   BackendECR:
-    Description: ECR Repository URI for Backend
     Value: !GetAtt BackendECRRepository.RepositoryUri
+  CIRoleArn:
+    Description: Set as GitHub variable AWS_CI_ROLE_ARN
+    Value: !GetAtt CIRole.Arn
+  DeployRoleArn:
+    Description: Set as GitHub variable AWS_DEPLOY_ROLE_ARN
+    Value: !GetAtt DeployRole.Arn
+  DashboardName:
+    Value: !Ref Dashboard
+  AlertTopicArn:
+    Value: !Ref NotificationTopic

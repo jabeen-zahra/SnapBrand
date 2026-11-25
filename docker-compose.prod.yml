@@ -1,0 +1,48 @@
+# Production variant used on the EC2 instances (images come from Amazon ECR).
+# Required env: ECR_REGISTRY, IMAGE_TAG, JWT_SECRET, AWS_REGION
+services:
+  frontend:
+    image: ${ECR_REGISTRY}/snapbrand-frontend:${IMAGE_TAG}
+    restart: always
+    ports:
+      - "80:8080"
+    depends_on:
+      - backend
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION}
+        awslogs-group: /snapbrand/frontend
+        awslogs-create-group: "true"
+    networks:
+      - snapbrand-net
+
+  backend:
+    image: ${ECR_REGISTRY}/snapbrand-backend:${IMAGE_TAG}
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: "5000"
+      DATA_DIR: /app/data
+      APP_VERSION: ${IMAGE_TAG}
+      JWT_SECRET: ${JWT_SECRET}
+      SIMULATE_FAILURE: ${SIMULATE_FAILURE:-false}
+    volumes:
+      - snapbrand-data:/app/data
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ${AWS_REGION}
+        awslogs-group: /snapbrand/backend
+        awslogs-create-group: "true"
+    networks:
+      - snapbrand-net
+
+networks:
+  snapbrand-net:
+    driver: bridge
+
+volumes:
+  snapbrand-data:

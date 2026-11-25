@@ -28,3 +28,7 @@ Thumbs.db
 .idea/
 *.log
 npm-debug.log*
+
+# Compiled output (built in CI / Docker)
+backend/dist/
+backend/public/

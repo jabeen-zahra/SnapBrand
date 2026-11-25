@@ -9,41 +9,39 @@ on:
 permissions:
   contents: read
   id-token: write
-  security-events: write
-  pull-requests: write
-  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  AWS_REGION: ap-southeast-2
+  ALB_URL: ${{ vars.ALB_URL || 'http://snapbrand-prod-alb-1271941775.ap-southeast-2.elb.amazonaws.com' }}
+  CI_ROLE_ARN: ${{ vars.AWS_CI_ROLE_ARN || 'arn:aws:iam::581237505874:role/snapbrand-prod-ci-role' }}
+  DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN || 'arn:aws:iam::581237505874:role/snapbrand-prod-deploy-role' }}
+
 jobs:
-  # ============================================================================
-  # STAGE 01: Secret Scanning (Gitleaks - Full Git History)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 01: Secret scanning (Gitleaks, full git history). Any finding fails.
+  # ===========================================================================
   stage-01-secret-scan:
     name: "01. Secret Scan (Gitleaks)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout full repository history
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Install Official Gitleaks Binary
+      - name: Install Gitleaks
         run: |
           curl -sSLo /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
-          tar -C /tmp -xzf /tmp/gitleaks.tar.gz
+          tar -C /tmp -xzf /tmp/gitleaks.tar.gz gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
-          chmod +x /usr/local/bin/gitleaks
+      - name: Scan full history
+        run: gitleaks detect --source . --config=.gitleaks.toml --verbose --redact
 
-      - name: Execute Gitleaks Full Git History Scan
-        run: |
-          gitleaks detect --source . --config=.gitleaks.toml --verbose --redact
-
-  # ============================================================================
-  # STAGE 02: Code Linting (ESLint)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 02: ESLint
+  # ===========================================================================
   stage-02-linting:
     name: "02. Code Linting (ESLint)"
     needs: [stage-01-secret-scan]
@@ -53,22 +51,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: '**/package-lock.json'
-      
-      - name: Install Dependencies
-        run: |
+      - run: |
           npm --prefix frontend ci
           npm --prefix backend ci
-
-      - name: Run ESLint
-        run: |
+      - run: |
           npm --prefix frontend run lint
           npm --prefix backend run lint
 
-  # ============================================================================
-  # STAGE 03: Code Formatting Check (Prettier)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 03: Prettier formatting check
+  # ===========================================================================
   stage-03-formatting:
     name: "03. Code Formatting (Prettier)"
     needs: [stage-02-linting]
@@ -78,32 +72,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run Prettier Verification
-        run: npx prettier --check "frontend/src/**/*.{ts,tsx,css}" "backend/src/**/*.ts"
+      - run: npx --yes prettier@3.2.5 --check "frontend/src/**/*.{ts,tsx,css}" "backend/src/**/*.ts" "backend/tests/**/*.ts"
 
-  # ============================================================================
-  # STAGE 04: Dockerfile Linting (Hadolint)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 04: Hadolint (fails on any warning or error)
+  # ===========================================================================
   stage-04-dockerfile-lint:
     name: "04. Dockerfile Lint (Hadolint)"
     needs: [stage-03-formatting]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Hadolint Frontend
-        uses: hadolint/hadolint-action@v3.1.0
+      - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: frontend/Dockerfile
-          failure-threshold: error
-      - name: Hadolint Backend
-        uses: hadolint/hadolint-action@v3.1.0
+          failure-threshold: warning
+      - uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: backend/Dockerfile
-          failure-threshold: error
+          failure-threshold: warning
 
-  # ============================================================================
-  # STAGE 05: Automated Unit Tests & Coverage Report
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 05: Unit tests + coverage report
+  # ===========================================================================
   stage-05-unit-tests:
     name: "05. Unit Tests & Coverage"
     needs: [stage-04-dockerfile-lint]
@@ -113,21 +104,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Run Backend Tests with Coverage
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Test with coverage
+        working-directory: backend
+        env:
+          NODE_ENV: test
         run: |
-          cd backend
           npm ci
           npm test
-      - name: Upload Coverage Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report
           path: backend/coverage/
-          if-no-files-found: ignore
+          if-no-files-found: error
 
-  # ============================================================================
-  # STAGE 06: Static Application Security Testing (SonarCloud Quality Gate)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 06: SonarCloud static analysis, must pass the quality gate
+  # ===========================================================================
   stage-06-sonarcloud:
     name: "06. Static Analysis (SonarCloud)"
     needs: [stage-05-unit-tests]
@@ -136,142 +130,203 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        continue-on-error: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-report
+          path: backend/coverage
+      - name: Require SONAR_TOKEN
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: '[ -n "$SONAR_TOKEN" ] || { echo "::error::SONAR_TOKEN secret is not configured"; exit 1; }'
+      - uses: SonarSource/sonarqube-scan-action@v5.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
 
-  # ============================================================================
-  # STAGE 07: Dependency Vulnerability Scanning (Snyk)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 07: Snyk dependency scan, fails on high/critical
+  # ===========================================================================
   stage-07-snyk-scan:
     name: "07. Dependency Scan (Snyk)"
     needs: [stage-06-sonarcloud]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Snyk Open Source
-        uses: snyk/actions/node@master
-        continue-on-error: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: snyk/actions/setup@0.4.0
+      - name: Require SNYK_TOKEN
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
+        run: '[ -n "$SNYK_TOKEN" ] || { echo "::error::SNYK_TOKEN secret is not configured"; exit 1; }'
+      - name: Snyk backend
+        working-directory: backend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          npm ci
+          snyk test --severity-threshold=high
+      - name: Snyk frontend
+        working-directory: frontend
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          npm ci
+          snyk test --severity-threshold=high
 
-  # ============================================================================
-  # STAGE 08: Multi-Stage Docker Image Build
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 08: Docker image build (multi-stage)
+  # ===========================================================================
   stage-08-docker-build:
     name: "08. Docker Image Build"
     needs: [stage-07-snyk-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build Frontend Image
-        uses: docker/build-push-action@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: ./frontend
           push: false
           tags: snapbrand-frontend:${{ github.sha }}
           outputs: type=docker,dest=/tmp/frontend.tar
-      - name: Build Backend Image
-        uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: false
           tags: snapbrand-backend:${{ github.sha }}
           outputs: type=docker,dest=/tmp/backend.tar
-      - name: Upload Docker Image Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: docker-images
           path: /tmp/*.tar
           retention-days: 1
 
-  # ============================================================================
-  # STAGE 09: Container Image CVE Scan (Trivy)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 09: Trivy image scan, fails on HIGH or CRITICAL
+  # ===========================================================================
   stage-09-trivy-scan:
     name: "09. Container Scan (Trivy)"
     needs: [stage-08-docker-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download Docker Image Artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: docker-images
           path: /tmp
-      - name: Load Docker Images
-        run: |
+      - run: |
           docker load --input /tmp/frontend.tar
           docker load --input /tmp/backend.tar
-      - name: Scan Frontend Image
-        uses: aquasecurity/trivy-action@master
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'snapbrand-frontend:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
-      - name: Scan Backend Image
-        uses: aquasecurity/trivy-action@master
+          image-ref: snapbrand-frontend:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          trivyignores: .trivyignore
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: 'snapbrand-backend:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
+          image-ref: snapbrand-backend:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          trivyignores: .trivyignore
 
-  # ============================================================================
-  # STAGE 10: Shell Scripting Quality Gate (ShellCheck)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 10: ShellCheck on automation scripts
+  # ===========================================================================
   stage-10-shellcheck:
     name: "10. Shell Scripting Gate (ShellCheck)"
     needs: [stage-09-trivy-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run ShellCheck on Automation Scripts
-        uses: ludeeus/action-shellcheck@master
+      - uses: ludeeus/action-shellcheck@2.0.0
+        env:
+          SHELLCHECK_OPTS: -x -P SCRIPTDIR
         with:
-          scandir: './scripts'
+          scandir: ./scripts
 
-  # ============================================================================
-  # STAGE 11: Amazon ECR Push & Rolling Cloud Deployment (Main Only)
-  # ============================================================================
+  # ===========================================================================
+  # STAGE 11: Push versioned images to ECR + rolling deployment (main only)
+  # ===========================================================================
   stage-11-cd-deploy:
     name: "11. CD Push & Rolling Deploy (AWS)"
     needs: [stage-10-shellcheck]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      previous_tag: ${{ steps.deploy.outputs.previous_tag }}
     steps:
       - uses: actions/checkout@v4
-      - name: Configure AWS Credentials via OIDC
-        continue-on-error: true
+      - name: Compute semantic version tag
+        id: ver
+        run: echo "version=v$(tr -d '[:space:]' < VERSION).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Assume CI role (OIDC, ECR push only)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION || 'ap-southeast-2' }}
+          role-to-assume: ${{ env.CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Push Container Images to Amazon ECR
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Check whether this version already exists (immutable tags)
+        id: exists
         run: |
-          echo "Pushing immutable semantic version tags to Amazon ECR..."
-          echo "Image: 581237505874.dkr.ecr.ap-southeast-2.amazonaws.com/snapbrand-backend:${{ github.sha }}"
-          echo "Image: 581237505874.dkr.ecr.ap-southeast-2.amazonaws.com/snapbrand-frontend:${{ github.sha }}"
+          if aws ecr describe-images --repository-name snapbrand-backend --image-ids imageTag=${{ steps.ver.outputs.version }} >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Trigger Rolling Update (ASG Instance Refresh)
-        run: |
-          echo "Triggering AWS Auto Scaling Group Instance Refresh with 50% min healthy percentage..."
-          echo "Deployment successfully rolled out to AWS Multi-AZ Cluster in ap-southeast-2"
+      - uses: docker/setup-buildx-action@v3
+        if: steps.exists.outputs.exists != 'true'
+      - name: Build and push backend (git SHA + semver tags)
+        if: steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/snapbrand-backend:${{ steps.ver.outputs.version }}
+            ${{ steps.ecr.outputs.registry }}/snapbrand-backend:${{ github.sha }}
+      - name: Build and push frontend (git SHA + semver tags)
+        if: steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/snapbrand-frontend:${{ steps.ver.outputs.version }}
+            ${{ steps.ecr.outputs.registry }}/snapbrand-frontend:${{ github.sha }}
 
-  # ============================================================================
-  # STAGE 12: Post-Deployment Smoke Test & Auto-Rollback
-  # ============================================================================
+      - name: Assume deploy role (OIDC, rolling refresh only)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Rolling deployment (ASG instance refresh, min 50% healthy)
+        id: deploy
+        run: ./scripts/deploy.sh "${{ steps.ver.outputs.version }}"
+
+      - name: Roll back if the deployment itself failed
+        if: failure() && steps.deploy.outcome == 'failure'
+        run: ./scripts/rollback.sh "${{ steps.deploy.outputs.previous_tag }}"
+
+  # ===========================================================================
+  # STAGE 12: Smoke test against the ALB + automatic rollback on failure
+  # ===========================================================================
   stage-12-smoke-test:
     name: "12. Smoke Test & Auto-Rollback"
     needs: [stage-11-cd-deploy]
@@ -279,25 +334,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node.js runtime for smoke verification
-        uses: actions/setup-node@v4
+
+      - name: Smoke test the load balancer
+        id: smoke
+        continue-on-error: true
+        run: ./scripts/smoke_test.sh "$ALB_URL" "${{ needs.stage-11-cd-deploy.outputs.version }}"
+
+      - name: Assume deploy role for rollback
+        if: steps.smoke.outcome == 'failure'
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          node-version: 20
-      - name: Execute Synthetic Health Checks
-        env:
-          ALB_URL: ${{ secrets.ALB_DNS_URL }}
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Automatic rollback to previous image version
+        if: steps.smoke.outcome == 'failure'
+        run: ./scripts/rollback.sh "${{ needs.stage-11-cd-deploy.outputs.previous_tag }}"
+
+      - name: Verify the rolled-back version
+        if: steps.smoke.outcome == 'failure'
+        run: ./scripts/smoke_test.sh "$ALB_URL" "${{ needs.stage-11-cd-deploy.outputs.previous_tag }}"
+
+      - name: Mark the pipeline failed after a rollback
+        if: steps.smoke.outcome == 'failure'
         run: |
-          chmod +x scripts/smoke_test.sh
-          if [ -n "$ALB_URL" ]; then
-            echo "Running smoke tests against live Application Load Balancer: $ALB_URL"
-            ./scripts/smoke_test.sh "$ALB_URL" "v0.9.8"
-          else
-            echo "ALB_DNS_URL not set in secrets. Running smoke tests against local service runner..."
-            cd backend && npm ci && npm run build
-            node dist/server.js &
-            SERVER_PID=$!
-            sleep 4
-            cd ..
-            ./scripts/smoke_test.sh "http://localhost:5000" "v0.9.8"
-            kill $SERVER_PID || true
-          fi
+          echo "::error::Smoke test failed; fleet rolled back to ${{ needs.stage-11-cd-deploy.outputs.previous_tag }}"
+          exit 1

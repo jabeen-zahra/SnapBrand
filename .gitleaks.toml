@@ -1,17 +1,9 @@
 [extend]
 useDefault = true
 
+# Narrow allowlist: only the seeded demo password used by tests (not a real credential).
 [allowlist]
-description = "Allowlist mock development strings and demo seeds"
-paths = [
-  '''backend/data/.*''',
-  '''backend/tests/.*''',
-  '''infra/.*''',
-  '''scripts/.*'''
-]
+description = "Demo seed password used by unit tests"
 regexes = [
   '''password123''',
-  '''snappass''',
-  '''snappassword_secops_hardened''',
-  '''snapbrand_super_secret_jwt_key_devsecops_2026'''
 ]

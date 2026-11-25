@@ -3,49 +3,36 @@ name: Manual Deployment Rollback
 on:
   workflow_dispatch:
     inputs:
-      target_image_tag:
-        description: 'Target Docker image tag or release version to restore (e.g. v1.1.0 or sha-xxxx)'
+      image_tag:
+        description: 'Image tag to restore (e.g. v1.0.5). Must exist in ECR.'
         required: true
-        default: 'v1.0.0'
-      asg_name:
-        description: 'Auto Scaling Group Name'
-        required: true
-        default: 'snapbrand-asg'
-      reason:
-        description: 'Reason for manual rollback'
-        required: true
-        default: 'Emergency reversion requested by on-call engineer'
+        type: string
 
 permissions:
   contents: read
   id-token: write
 
+env:
+  AWS_REGION: ap-southeast-2
+  ALB_URL: ${{ vars.ALB_URL || 'http://snapbrand-prod-alb-1271941775.ap-southeast-2.elb.amazonaws.com' }}
+  DEPLOY_ROLE_ARN: ${{ vars.AWS_DEPLOY_ROLE_ARN || 'arn:aws:iam::581237505874:role/snapbrand-prod-deploy-role' }}
+
 jobs:
-  execute-rollback:
-    name: "Revert Live ASG to Target Version"
+  rollback:
+    name: "Roll back to ${{ inputs.image_tag }}"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials via OIDC
+      - uses: actions/checkout@v4
+      - name: Assume deploy role (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
-        continue-on-error: true
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
-
-      - name: Update Launch Template & Trigger Instance Refresh
-        continue-on-error: true
-        run: |
-          echo "Initiating manual rollback to image tag: ${{ github.event.inputs.target_image_tag }}"
-          echo "Reason: ${{ github.event.inputs.reason }}"
-          # aws autoscaling start-instance-refresh \
-          #   --auto-scaling-group-name "${{ github.event.inputs.asg_name }}" \
-          #   --preferences '{"MinHealthyPercentage": 50, "InstanceWarmup": 120}'
-
-      - name: Post-Rollback Verification Probe
-        run: |
-          chmod +x scripts/smoke_test.sh
-          echo "Probing cluster after rollback dispatch..."
-          # ./scripts/smoke_test.sh "${{ secrets.ALB_DNS_URL || 'http://localhost:5000' }}" "${{ github.event.inputs.target_image_tag }}"
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Rolling rollback
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: ./scripts/rollback.sh "$IMAGE_TAG"
+      - name: Verify
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: ./scripts/smoke_test.sh "$ALB_URL" "$IMAGE_TAG"

@@ -8,13 +8,13 @@ import { check, sleep } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },  // Ramp-up to 20 virtual users
-    { duration: '1m',  target: 60 },  // Spike to 60 VUs (triggers ASG scale-out)
-    { duration: '1m',  target: 60 },  // Sustained peak load
-    { duration: '30s', target: 0 },   // Ramp-down to 0 (triggers ASG scale-in)
+    { duration: '1m', target: 50 },   // ramp-up
+    { duration: '3m', target: 150 },  // heavy load: triggers scale-out
+    { duration: '5m', target: 150 },  // sustained peak
+    { duration: '1m', target: 0 },    // ramp-down: scale-in follows after cooldown
   ],
   thresholds: {
-    http_req_duration: ['p(95)<500'], // 95% of requests must complete below 500ms
+    http_req_duration: ['p(95)<1500'],
     http_req_failed: ['rate<0.01'],   // Error rate must stay below 1%
   },
 };
@@ -44,5 +44,5 @@ export default function () {
     'correct content-type header': (r) => r.headers['Content-Type'].includes('image/svg+xml'),
   });
 
-  sleep(0.5);
+  sleep(0.1);
 }

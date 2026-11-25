@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 
 import path from "path";
 import fs from "fs";
+import { metricsMiddleware, snapshot } from "./middleware/metrics";
 import healthRouter from "./routes/health";
 import templatesRouter from "./routes/templates";
 import projectsRouter from "./routes/projects";
@@ -28,21 +29,13 @@ app.use(
 );
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "10mb" }));
+app.use(metricsMiddleware);
 app.use(morgan("combined"));
 
 // Route Registrations
 app.use("/health", healthRouter);
 app.use("/metrics", (req: Request, res: Response) => {
-  const memory = process.memoryUsage();
-  res.json({
-    status: "ok",
-    uptimeSeconds: Math.floor(process.uptime()),
-    activeConnections: 1,
-    p95LatencyMs: 18.4,
-    requestThroughputPerSec: 142.8,
-    memoryRssMb: (memory.rss / (1024 * 1024)).toFixed(2),
-    heapUsedMb: (memory.heapUsed / (1024 * 1024)).toFixed(2),
-  });
+  res.json(snapshot());
 });
 
 app.use("/api/v1/auth", authRouter);

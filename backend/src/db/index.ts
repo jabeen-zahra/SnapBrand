@@ -54,8 +54,19 @@ interface DatabaseSchema {
   brandKits: BrandKitRecord[];
 }
 
-const DATA_DIR = path.resolve(__dirname, "../../data");
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(__dirname, "../../data");
 const DB_FILE = path.join(DATA_DIR, "snapbrand.db.json");
+
+export function isStorageWritable(): boolean {
+  try {
+    fs.accessSync(DATA_DIR, fs.constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 class Database {
   private data: DatabaseSchema;

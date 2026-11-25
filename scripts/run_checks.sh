@@ -21,7 +21,7 @@ echo -e "${CYAN}====================================================${NC}"
 # 1. ShellCheck Verification
 echo -e "\n${YELLOW}[Stage 1/5] Checking shell scripts with ShellCheck...${NC}"
 if command -v shellcheck >/dev/null 2>&1; then
-    shellcheck scripts/*.sh
+    shellcheck -x -P SCRIPTDIR scripts/*.sh
     echo -e "${GREEN}✓ All shell scripts passed ShellCheck validation.${NC}"
 else
     echo -e "${YELLOW}! ShellCheck not found on host. Skipping local lint.${NC}"
