@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
 
+import path from "path";
+import fs from "fs";
 import healthRouter from "./routes/health";
 import templatesRouter from "./routes/templates";
 import projectsRouter from "./routes/projects";
@@ -49,6 +51,22 @@ app.use("/api/v1/projects", projectsRouter);
 app.use("/api/v1/render", renderRouter);
 app.use("/api/v1/brandkits", brandkitsRouter);
 app.use("/api/v1/audit", auditRouter);
+
+// Serve Production React SPA
+const publicDir = path.resolve(__dirname, "../public");
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+  app.get("*", (req: Request, res: Response, next: NextFunction) => {
+    if (
+      req.path.startsWith("/api") ||
+      req.path.startsWith("/health") ||
+      req.path.startsWith("/metrics")
+    ) {
+      return next();
+    }
+    res.sendFile(path.join(publicDir, "index.html"));
+  });
+}
 
 // Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

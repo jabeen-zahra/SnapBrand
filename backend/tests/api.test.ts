@@ -110,4 +110,12 @@ describe('SnapBrand Microservice Health, Auth & Persistence Suite', () => {
     expect(content).toContain('<svg');
     expect(content).toContain('Creative Studio');
   });
+
+  it('GET /api/v1/templates/categories returns unique template categories', async () => {
+    const res = await request(app).get('/api/v1/templates/categories');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.categories).toContain('github');
+    expect(res.body.categories).toContain('twitter');
+  });
 });
