@@ -1,0 +1,17 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist mock development strings and demo seeds"
+paths = [
+  '''backend/data/.*''',
+  '''backend/tests/.*''',
+  '''infra/.*''',
+  '''scripts/.*'''
+]
+regexes = [
+  '''password123''',
+  '''snappass''',
+  '''snappassword_secops_hardened''',
+  '''snapbrand_super_secret_jwt_key_devsecops_2026'''
+]

@@ -10,6 +10,8 @@ permissions:
   contents: read
   id-token: write
   security-events: write
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -32,7 +34,9 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: true
+          GITLEAKS_ENABLE_COMMENTS: false
+          GITLEAKS_ENABLE_SUMMARY: true
+          GITLEAKS_CONFIG: .gitleaks.toml
 
   # ============================================================================
   # STAGE 02: Code Linting (ESLint)
