@@ -30,13 +30,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Execute Gitleaks Full Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: false
-          GITLEAKS_ENABLE_SUMMARY: true
-          GITLEAKS_CONFIG: .gitleaks.toml
+      - name: Install Official Gitleaks Binary
+        run: |
+          curl -sSLo /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz
+          tar -C /tmp -xzf /tmp/gitleaks.tar.gz
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          chmod +x /usr/local/bin/gitleaks
+
+      - name: Execute Gitleaks Full Git History Scan
+        run: |
+          gitleaks detect --source . --config=.gitleaks.toml --verbose --redact
 
   # ============================================================================
   # STAGE 02: Code Linting (ESLint)
