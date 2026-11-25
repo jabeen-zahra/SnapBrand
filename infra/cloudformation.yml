@@ -270,16 +270,15 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
+            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
             dnf update -y
             dnf install -y git nodejs
             
-            # Setup SnapBrand full-stack production application directory
             mkdir -p /opt/snapbrand
             git clone -b feature/production-hardening https://github.com/jabeen-zahra/SnapBrand.git /opt/snapbrand
             cd /opt/snapbrand/backend
-            npm ci --only=production
+            npm install --omit=dev
             
-            # Create systemd service for continuous resilient operation
             cat << 'EOF' > /etc/systemd/system/snapbrand.service
             [Unit]
             Description=SnapBrand Full-Stack Microservice
